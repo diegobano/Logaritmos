@@ -1,9 +1,9 @@
 // Example program
 #include <iostream>
-#include <stdlib.h>
-#include <list>
-#include <string>
 #include <limits>
+#include <list>
+#include <stdlib.h>
+#include <string>
 using namespace std;
 
 #define M 256
@@ -21,12 +21,10 @@ struct Rtree {
   Rtree *children[M + 1];
 };
 
-int getArea(Rectangle c) {
-	return (c.xMax - c.xMin) * (c.yMax - c.yMin);
-}
+int getArea(Rectangle c) { return (c.xMax - c.xMin) * (c.yMax - c.yMin); }
 
 int getPerimeter(Rectangle c) {
-	return 2 * (c.xMax - c.xMin) + 2 * (c.yMax - c.yMin);
+  return 2 * (c.xMax - c.xMin + c.yMax - c.yMin);
 }
 
 int intersect(Rectangle r1, Rectangle r2) {
@@ -43,10 +41,9 @@ void searchRec(Rectangle C, Rtree *node, list<Rectangle> &result) {
   }
   for (int i = 0; i < node->numKeys; i++) {
     if (intersect(C, node->MBR[i])) {
-      if (node->isLeaf) {
+      if (node->isLeaf)
         result.push_back(node->MBR[i]);
-        cout << result.size() << "\n";
-      } else
+      else
         searchRec(C, node->children[i], result);
     }
   }
@@ -55,63 +52,59 @@ void searchRec(Rectangle C, Rtree *node, list<Rectangle> &result) {
 list<Rectangle> search(Rectangle C, Rtree *root) {
   list<Rectangle> result;
   searchRec(C, root, result);
-  cout << &result << "\n";
   return result;
 }
 
-int getMBRgrowth(Rectangle c, Rectangle mbr) {
-	Rectangle n;
-	n.xMin = c.xMin < mbr.xMin ? c.xMin : mbr.xMin;
-	n.xMax = c.xMax > mbr.xMax ? c.xMax : mbr.xMax;
-	n.yMin = c.yMin < mbr.yMin ? c.yMin : mbr.yMin;
-	n.yMax = c.yMax > mbr.yMax ? c.yMax : mbr.yMax;
-	a1 = getArea(n);
-	a2 = getArea(mbr);
-	return a1 - a2;
+void fit(Rectangle C, Rectangle &in, Rectangle &out) {
+  out.xMin = C.xMin < in.xMin ? C.xMin : in.xMin;
+  out.xMax = C.xMax > in.xMax ? C.xMax : in.xMax;
+  out.yMin = C.yMin < in.yMin ? C.yMin : in.yMin;
+  out.yMax = C.yMax > in.yMax ? C.yMax : in.yMax;
 }
 
-void fit(Rectangle c, Rectangle &mbr) {
-	mbr.xMin = c.xMin < mbr.xMin ? c.xMin : mbr.xMin;
-	mbr.xMax = c.xMax > mbr.xMax ? c.xMax : mbr.xMax;
-	mbr.yMin = c.yMin < mbr.yMin ? c.yMin : mbr.yMin;
-	mbr.yMax = c.yMax > mbr.yMax ? c.yMax : mbr.yMax;
+int getMBRgrowth(Rectangle C, Rectangle MBR) {
+  Rectangle n;
+  fit(C, MBR, n);
+  a1 = getArea(n);
+  a2 = getArea(MBR);
+  return a1 - a2;
 }
 
-void split(Rtree* node, Rtree* father) {
-	// Implementar heuristica
+void split(Rtree *node, Rtree *father) {
+  // Implementar heuristica
 }
 
-void insert(Rectangle c, Rtree *node, Rtree* father) {
-	int smaller = 0;
-	int growth = MAX_INT;
-	int tmp, a1, a2;
-	if (!node->isLeaf) {
-		for(int i=0; i < node->numKeys; i++) {
-			tmp = getMBRgrowth(c, node->MBR[i]);
-			if (tmp < growth) {
-				smaller = i;
-				growth = tmp;
-			} else if (tmp == growth) {
-				a1 = getArea(node->MBR[smaller]);
-				a2 = getArea(node->MBR[i]);
-				if (a1 > a2) {
-					smaller = i;
-					growth = tmp;
-				} else if (a1 == a2) {
-					int r = rand() % 2;
-					smaller = r ? i : smaller;
-					growth = r ? tmp : growth;
-				}
-			}
-		}
-		fit(c, node->MBR[smaller]);
-		insert(c, node->children[smaller], &node);
-	} else {
-		node->MBR[numKeys++] = c;
-	}
-	if (node->numKeys > M) {
-		split(node, father);
-	}
+void insert(Rectangle C, Rtree *node, Rtree *father) {
+  int smaller = 0;
+  int growth = MAX_INT;
+  int tmp, a1, a2;
+  if (!node->isLeaf) {
+    for (int i = 0; i < node->numKeys; i++) {
+      tmp = getMBRgrowth(C, node->MBR[i]);
+      if (tmp < growth) {
+        smaller = i;
+        growth = tmp;
+      } else if (tmp == growth) {
+        a1 = getArea(node->MBR[smaller]);
+        a2 = getArea(node->MBR[i]);
+        if (a1 > a2) {
+          smaller = i;
+          growth = tmp;
+        } else if (a1 == a2) {
+          int r = rand() % 2;
+          smaller = r ? i : smaller;
+          growth = r ? tmp : growth;
+        }
+      }
+    }
+    fit(C, node->MBR[smaller], node->MBR[smaller]);
+    insert(C, node->children[smaller], &node);
+  } else {
+    node->MBR[node->numKeys++] = C;
+  }
+  if (node->numKeys > M) {
+    split(node, father);
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -159,8 +152,6 @@ int main(int argc, char *argv[]) {
   Rectangle s = {1, -8, 6, 1};
 
   list<Rectangle> result = search(s, root);
-  cout << &result << "\n";
-  cout << result.size() << "\n";
   printf("%i %i %i %i\n", result.front().xMin, result.front().yMin,
          result.front().xMax, result.front().yMax);
   printf("%i %i %i %i\n", result.back().xMin, result.back().yMin,
