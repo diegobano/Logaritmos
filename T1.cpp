@@ -1,5 +1,6 @@
 // Example program
 #include <iostream>
+#include <fstream>
 #include <stdlib.h>
 #include <list>
 #include <string>
@@ -7,7 +8,10 @@
 using namespace std;
 
 #define M 256
+#define m M*4/10
 #define MAX_INT numeric_limits<int>::max()
+
+int N_CHILD = 0;
 
 struct Rectangle {
   int xMin, yMin;
@@ -18,7 +22,7 @@ struct Rtree {
   int isLeaf;
   int numKeys;
   Rectangle MBR[M + 1];
-  Rtree *children[M + 1];
+  int *children[M + 1];
 };
 
 int getArea(Rectangle c) {
@@ -59,41 +63,167 @@ list<Rectangle> search(Rectangle C, Rtree *root) {
   return result;
 }
 
+void fit(Rectangle c, Rectangle &mbr, Rectangle &out) {
+	out.xMin = c.xMin < mbr.xMin ? c.xMin : mbr.xMin;
+	out.xMax = c.xMax > mbr.xMax ? c.xMax : mbr.xMax;
+	out.yMin = c.yMin < mbr.yMin ? c.yMin : mbr.yMin;
+	out.yMax = c.yMax > mbr.yMax ? c.yMax : mbr.yMax;
+}
+
 int getMBRgrowth(Rectangle c, Rectangle mbr) {
 	Rectangle n;
-	n.xMin = c.xMin < mbr.xMin ? c.xMin : mbr.xMin;
-	n.xMax = c.xMax > mbr.xMax ? c.xMax : mbr.xMax;
-	n.yMin = c.yMin < mbr.yMin ? c.yMin : mbr.yMin;
-	n.yMax = c.yMax > mbr.yMax ? c.yMax : mbr.yMax;
+	fit(c, mbr, n)
 	a1 = getArea(n);
 	a2 = getArea(mbr);
 	return a1 - a2;
 }
 
-void fit(Rectangle c, Rectangle &mbr) {
-	mbr.xMin = c.xMin < mbr.xMin ? c.xMin : mbr.xMin;
-	mbr.xMax = c.xMax > mbr.xMax ? c.xMax : mbr.xMax;
-	mbr.yMin = c.yMin < mbr.yMin ? c.yMin : mbr.yMin;
-	mbr.yMax = c.yMax > mbr.yMax ? c.yMax : mbr.yMax;
+int getUselessArea(Rectangle d1, Rectangle d2) {
+	Rectangle aux;
+	fit(d1, d2, aux);
+	return getArea(aux) - getArea(d1) - getArea(d2);
 }
 
-void split(Rtree* node, Rtree* father) {
-	// Implementar heuristica
+void QuadraticSplit(int nFile, int fFile, int childPos) {
+	Rectangle d1, d2, aux1, aux2;
+	int pos1, pos2, curr;
+	int max = 0, ua, d, a1, a2;
+	int placed[node->numKeys];
+	Rtree newNode1 = new Rtree(), newNode2 = new Rtree();
+	Rtree node = new Rtree(), father = new Rtree();
+
+	fstream n(to_string(nFile), ios::in | ios::out | ios::binary);
+	fstream f(to_string(fFile), ios::in | ios::out | ios::binary);
+	n.read((char*)&node, sizeof(Rtree));
+	f.read((char*)&father, sizeof(Rtree));
+
+	for (int i = 0; i < node->numKeys; i++) {
+		for (int j = i + 1; j < node.numKeys; j++) {
+			ua = getUselessArea(node.MBR[i], node.MBR[j]);
+			if (ua > max) {
+				d1 = node.MBR[i];
+				d2 = node.MBR[j];
+				pos1 = i; pos2 = j;
+				max = ua;
+			}
+		}
+	}
+	
+	while (1) {
+		// newNode1 full
+		if (newNode1.numKeys >= M - m + 1) {
+			for (int i = 0; i < node.numKeys; i++) {
+				if (!placed[i]) {
+					placed[i] = 1;
+					newNode2.MBR[newNode2.numKeys] = node.MBR[i];
+					newNode2.children[newNode2.numKeys++] = node.children[i];
+				}
+			}
+			break;
+		}
+		// newNode2 full
+		if (newNode2.numKeys >= M - m + 1) {
+			for (int i = 0; i < node.numKeys; i++) {
+				if (!placed[i]) {
+					placed[i] = 1;
+					newNode1.MBR[newNode1.numKeys] = node.MBR[i];
+					newNode1.children[newNode1.numKeys++] = node.children[i];
+				}
+			}
+			break;
+		}
+
+		max = 0;
+		for (int i = 0; i < node.numKeys; i++) {
+			if (!placed[i]) {
+				fit(node.MBR[i], d1, aux1);
+				fit(node.MBR[i], d2, aux2);
+				d = abs(getArea(aux1) - getArea(aux2));
+				if (d > max) {
+					max = d;
+					curr = i;
+				}
+			}
+		}
+
+		a1 = getMBRgrowth(node.MBR[curr], d1);
+		a2 = getMBRgrowth(node.MBR[curr], d2);
+		if (a1 < a2) {
+			newNode1.children[newNode1.numKeys] = node.children[curr];
+			newNode1.MBR[newNode1.numKeys++] = node.MBR[curr];
+			fit(node.MBR[curr], d1, d1);
+		} else if (a2 < a1) {
+			newNode2.children[newNode2.numKeys] = node.children[curr];
+			newNode2.MBR[newNode2.numKeys++] = node.MBR[curr];
+			fit(node.MBR[curr], d2, d2);
+		} else {
+			fit(node.MBR[curr], d1, aux1);
+			fit(node.MBR[curr], d2, aux2);
+			a1 = getArea(aux1); a1 = getArea(aux2);
+			if (a1 < a2) {
+				newNode1.children[newNode1.numKeys] = node.children[curr];
+				newNode1.MBR[newNode1.numKeys++] = node.MBR[curr];
+				fit(node.MBR[curr], d1, d1);
+			} else if (a2 < a1) {
+				newNode2.children[newNode2.numKeys] = node.children[curr];
+				newNode2.MBR[newNode2.numKeys++] = node.MBR[curr];
+				fit(node.MBR[curr], d2, d2);
+			} else {
+				if (newNode1.numKeys < newNode2.numKeys) {
+					newNode1.children[newNode1.numKeys] = node.children[curr];
+					newNode1.MBR[newNode1.numKeys++] = node.MBR[curr];
+					fit(node.MBR[curr], d1, d1);
+				} else {
+					newNode2.children[newNode2.numKeys] = node.children[curr];
+					newNode2.MBR[newNode2.numKeys++] = node.MBR[curr];
+					fit(node.MBR[curr], d2, d2);
+				}
+			}
+		}
+		// Mark as placed
+		placed[curr] = 1;
+	}
+	// Update/reuse old node with overflow
+	n.seekp(0, ios::beg);
+	n.write((char*)&newNode1, sizeof(Rtree));
+	n.close();
+
+	// Create new node in secondary memory
+	fstream newN(to_string(N_CHILD), ios::out | ios::binary);
+	newN.write((char*)&newNode2, sizeof(Rtree));
+	newN.close();
+
+	// Update and save father
+	father.MBR[childPos] = d1;
+	father.MBR[father.numKeys] = d2;
+	father.children[father.numKeys++] = N_CHILD++;
+	f.seekp(0, ios::beg);
+	f.write((char*)&father, sizeof(Rtree));
+	f.close();
+
+	// Free memory
+	delete node;
+	delete father;
+	delete newNode1;
+	delete newNode2;
 }
 
-void insert(Rectangle c, Rtree *node, Rtree* father) {
+void insert(Rectangle c, int nFile, int fFile, int childPos, void (*split)(int, int, int)) {
 	int smaller = 0;
 	int growth = MAX_INT;
 	int tmp, a1, a2;
-	if (!node->isLeaf) {
-		for(int i=0; i < node->numKeys; i++) {
-			tmp = getMBRgrowth(c, node->MBR[i]);
+	Rtree node = new Rtree();
+	fstream n(to_string(nFile), ios::in | ios::out | ios::binary);
+	n.read((char*)&node, sizeof(Rtree));
+	if (!node.isLeaf) {
+		for(int i=0; i < node.numKeys; i++) {
+			tmp = getMBRgrowth(c, node.MBR[i]);
 			if (tmp < growth) {
 				smaller = i;
 				growth = tmp;
 			} else if (tmp == growth) {
-				a1 = getArea(node->MBR[smaller]);
-				a2 = getArea(node->MBR[i]);
+				a1 = getArea(node.MBR[smaller]);
+				a2 = getArea(node.MBR[i]);
 				if (a1 > a2) {
 					smaller = i;
 					growth = tmp;
@@ -104,14 +234,24 @@ void insert(Rectangle c, Rtree *node, Rtree* father) {
 				}
 			}
 		}
-		fit(c, node->MBR[smaller]);
-		insert(c, node->children[smaller], &node);
+		fit(c, node.MBR[smaller], node.MBR[smaller]);
+		n.seekp(0, ios::beg);
+		n.write(node, sizeof(Rtree));
+		n.close();
+		insert(c, node.children[smaller], nFile, smaller, split);
 	} else {
-		node->MBR[numKeys++] = c;
+		smaller = node.numKeys;
+		node.MBR[node.numKeys++] = c;
+		n.seekp(0, ios::beg);
+		n.write(node, sizeof(Rtree));
+		n.close();
 	}
-	if (node->numKeys > M) {
-		split(node, father);
+	// Check correct size
+	if (node.numKeys > M) {
+		split(nFile, fFile, childPos);
 	}
+
+	delete node;
 }
 
 int main(int argc, char *argv[]) {
