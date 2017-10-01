@@ -8,8 +8,8 @@
 #include <limits>
 using namespace std;
 
-#define M 203
-#define m 81
+#define M 25
+#define m 10
 #define MAX_INT numeric_limits<int>::max()
 
 int root = 1;
