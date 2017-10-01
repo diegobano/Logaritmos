@@ -8,7 +8,7 @@
 using namespace std;
 
 #define M 203
-#define m M*4/10
+#define m 81
 #define MAX_INT numeric_limits<int>::max()
 
 int root = 1;
@@ -91,24 +91,33 @@ int getUselessArea(Rectangle d1, Rectangle d2) {
 }
 
 void QuadraticSplit(int nFile, int fFile, int childPos) {
+	cout << "Haciendo split de " << nFile << endl;
 	Rectangle d1, d2, aux1, aux2;
-	int pos1, pos2, curr;
+	int pos1, pos2, curr, newRoot;
 	int max = 0, ua, d, a1, a2;
 	Rtree newNode1, newNode2;
 	Rtree node, father;
+	fstream f, n;
 
 	if (fFile < 0) {
-		root = N_CHILD++;
-		fFile = root;
-		fstream f(to_string(fFile), ios::in | ios::out | ios::binary);
+		cout << "Creando nueva raiz en " << N_CHILD << endl;
+		newRoot = N_CHILD++;
+		f.open(to_string(newRoot), ios::out | ios::trunc | ios::binary);
 	} else {
-		fstream f(to_string(fFile), ios::in | ios::out | ios::binary);
+		f.open(to_string(fFile), ios::in | ios::out | ios::binary);
 		f.read((char*)&father, sizeof(Rtree));
 	}
-	fstream n(to_string(nFile), ios::in | ios::out | ios::binary);
+	n.open(to_string(nFile), ios::in | ios::out | ios::binary);
 	n.read((char*)&node, sizeof(Rtree));
 
+	// Setting initial values for new nodes
+	newNode1.numKeys = 0;
+	newNode1.isLeaf = node.isLeaf;
+	newNode2.numKeys = 0;
+	newNode2.isLeaf = node.isLeaf;
+
 	int placed[node.numKeys];
+
 	for (int i = 0; i < node.numKeys; i++) {
 		for (int j = i + 1; j < node.numKeys; j++) {
 			ua = getUselessArea(node.MBR[i], node.MBR[j]);
@@ -122,8 +131,10 @@ void QuadraticSplit(int nFile, int fFile, int childPos) {
 	}
 	
 	while (1) {
+		cout << "Nodo 1 tiene " << newNode1.numKeys << " elementos y Nodo 2 tiene " << newNode2.numKeys << " elementos\n";
 		// newNode1 full
 		if (newNode1.numKeys >= M - m + 1) {
+			cout << "Nodo 1 lleno con " << newNode1.numKeys << " elementos\n";
 			for (int i = 0; i < node.numKeys; i++) {
 				if (!placed[i]) {
 					placed[i] = 1;
@@ -135,6 +146,7 @@ void QuadraticSplit(int nFile, int fFile, int childPos) {
 		}
 		// newNode2 full
 		if (newNode2.numKeys >= M - m + 1) {
+			cout << "Nodo 2 lleno con " << newNode2.numKeys << " elementos\n";
 			for (int i = 0; i < node.numKeys; i++) {
 				if (!placed[i]) {
 					placed[i] = 1;
@@ -195,26 +207,36 @@ void QuadraticSplit(int nFile, int fFile, int childPos) {
 		// Mark as placed
 		placed[curr] = 1;
 	}
+
 	// Update/reuse old node with overflow
+	cout << "Reciclando nodo en " << nFile << endl;
+	cout << "Hoja: " << newNode1.isLeaf << endl;
 	n.seekp(0, ios::beg);
 	n.write((char*)&newNode1, sizeof(Rtree));
 	n.close();
 
 	// Create new node in secondary memory
+	cout << "Creando nuevo nodo en " << N_CHILD << endl;
+	cout << "Hoja: " << newNode2.isLeaf << endl;
 	fstream newN(to_string(N_CHILD), ios::out | ios::binary);
 	newN.write((char*)&newNode2, sizeof(Rtree));
 	newN.close();
 
+	cout << "Actualizando al padre: " << (fFile < 0 ? newRoot : fFile) << endl;
 	// Update and save father
 	if (fFile < 0) {
 		father.MBR[0] = d1;
+		father.children[0] = root;
 		father.numKeys = 1;
+		father.isLeaf = 0;
+		root = newRoot;
 	} else {
 		father.MBR[childPos] = d1;
+		f.seekp(0, ios::beg);
 	}
 	father.MBR[father.numKeys] = d2;
 	father.children[father.numKeys++] = N_CHILD++;
-	f.seekp(0, ios::beg);
+	cout << "Padre quedo con " << father.numKeys << " elementos\n";
 	f.write((char*)&father, sizeof(Rtree));
 	f.close();
 }
@@ -226,9 +248,13 @@ void insert(Rectangle c, int nFile, int fFile, int childPos, void (*split)(int, 
 	int growth = MAX_INT;
 	int tmp, a1, a2;
 	Rtree node;
+	cout << "Abriendo archivo " << nFile << endl;
 	fstream n(to_string(nFile), ios::in | ios::out | ios::binary);
 	n.read((char*)&node, sizeof(Rtree));
+	cout << node.isLeaf << endl;
+	cout << node.numKeys << endl;
 	if (!node.isLeaf) {
+		cout << "Archivo " << nFile << " no es una hoja\n";
 		for(int i=0; i < node.numKeys; i++) {
 			tmp = getMBRgrowth(c, node.MBR[i]);
 			if (tmp < growth) {
@@ -247,19 +273,25 @@ void insert(Rectangle c, int nFile, int fFile, int childPos, void (*split)(int, 
 				}
 			}
 		}
+		cout << "Actualizando MBR de hijo\n";
 		fit(c, node.MBR[smaller], node.MBR[smaller]);
+		cout << "Actualizando archivo\n";
 		n.seekp(0, ios::beg);
 		n.write((char*)&node, sizeof(Rtree));
 		n.close();
+		cout << "Insertar en hijo " << node.children[smaller] << endl;
 		insert(c, node.children[smaller], nFile, smaller, split);
 	} else {
-		smaller = node.numKeys;
+		cout << "Archivo " << nFile << " SI es una hoja\n";
+		cout << "Contiene " << node.numKeys << " elementos\n";
 		node.MBR[node.numKeys++] = c;
+		cout << "Actualizando archivo\n";
 		n.seekp(0, ios::beg);
 		n.write((char*)&node, sizeof(Rtree));
 		n.close();
 	}
 	// Check correct size
+	cout << "Verificando invariante\n";
 	if (node.numKeys > M) {
 		split(nFile, fFile, childPos);
 	}
@@ -271,6 +303,16 @@ void insert(Rectangle c, int root, void (*split)(int, int, int)) {
 
 int main(int argc, char *argv[]) {
 	int n = 1<<9;
+	Rtree init;
+	init.isLeaf = 1;
+	init.numKeys = 0;
+
+	cout << "Creando raiz inicial\n";
+	fstream r(to_string(root), ios::out | ios::trunc | ios::binary);
+	r.write((char*)&init, sizeof(Rtree));
+	r.close();
+
+	cout << "Creando rectangulos para insertar en el arbol\n";
 	Rectangle rs[n];
 	for (int i = 0; i < n; i++) {
 		rs[i].xMin = rand() % 500001;
@@ -278,7 +320,8 @@ int main(int argc, char *argv[]) {
 		rs[i].xMax = rs[i].xMin + rand() % 100 + 1;
 		rs[i].yMax = rs[i].yMin + rand() % 100 + 1;
 	}
-
+	cout << "Rectangulos creados\n";
+	cout << "Insertando en raiz\n";
 	for (int i = 0; i < n; i++) {
 		insert(rs[i], root, QuadraticSplit);
 	}
