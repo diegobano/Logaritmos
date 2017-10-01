@@ -7,11 +7,12 @@
 #include <limits>
 using namespace std;
 
-#define M 256
+#define M 203
 #define m M*4/10
 #define MAX_INT numeric_limits<int>::max()
 
-int N_CHILD = 0;
+int root = 1;
+int N_CHILD = 2;
 
 struct Rectangle {
   int xMin, yMin;
@@ -22,7 +23,7 @@ struct Rtree {
   int isLeaf;
   int numKeys;
   Rectangle MBR[M + 1];
-  int *children[M + 1];
+  int children[M + 1];
 };
 
 int getArea(Rectangle c) {
@@ -41,22 +42,26 @@ int intersect(Rectangle r1, Rectangle r2) {
     return true;
 }
 
-void searchRec(Rectangle C, Rtree *node, list<Rectangle> &result) {
-  if (node == NULL) {
+void searchRec(Rectangle C, int nFile, list<Rectangle> &result) {
+	Rtree node;
+  if (nFile == 0) {
     return;
   }
-  for (int i = 0; i < node->numKeys; i++) {
-    if (intersect(C, node->MBR[i])) {
-      if (node->isLeaf) {
-        result.push_back(node->MBR[i]);
+	fstream n(to_string(nFile), ios::in | ios::out | ios::binary);
+	n.read((char*)&node, sizeof(Rtree));
+	n.close();
+  for (int i = 0; i < node.numKeys; i++) {
+    if (intersect(C, node.MBR[i])) {
+      if (node.isLeaf) {
+        result.push_back(node.MBR[i]);
         cout << result.size() << "\n";
       } else
-        searchRec(C, node->children[i], result);
+        searchRec(C, node.children[i], result);
     }
   }
 }
 
-list<Rectangle> search(Rectangle C, Rtree *root) {
+list<Rectangle> search(Rectangle C, int root) {
   list<Rectangle> result;
   searchRec(C, root, result);
   cout << &result << "\n";
@@ -72,7 +77,8 @@ void fit(Rectangle c, Rectangle &mbr, Rectangle &out) {
 
 int getMBRgrowth(Rectangle c, Rectangle mbr) {
 	Rectangle n;
-	fit(c, mbr, n)
+	int a1, a2;
+	fit(c, mbr, n);
 	a1 = getArea(n);
 	a2 = getArea(mbr);
 	return a1 - a2;
@@ -88,16 +94,22 @@ void QuadraticSplit(int nFile, int fFile, int childPos) {
 	Rectangle d1, d2, aux1, aux2;
 	int pos1, pos2, curr;
 	int max = 0, ua, d, a1, a2;
-	int placed[node->numKeys];
-	Rtree newNode1 = new Rtree(), newNode2 = new Rtree();
-	Rtree node = new Rtree(), father = new Rtree();
+	Rtree newNode1, newNode2;
+	Rtree node, father;
 
+	if (fFile < 0) {
+		root = N_CHILD++;
+		fFile = root;
+		fstream f(to_string(fFile), ios::in | ios::out | ios::binary);
+	} else {
+		fstream f(to_string(fFile), ios::in | ios::out | ios::binary);
+		f.read((char*)&father, sizeof(Rtree));
+	}
 	fstream n(to_string(nFile), ios::in | ios::out | ios::binary);
-	fstream f(to_string(fFile), ios::in | ios::out | ios::binary);
 	n.read((char*)&node, sizeof(Rtree));
-	f.read((char*)&father, sizeof(Rtree));
 
-	for (int i = 0; i < node->numKeys; i++) {
+	int placed[node.numKeys];
+	for (int i = 0; i < node.numKeys; i++) {
 		for (int j = i + 1; j < node.numKeys; j++) {
 			ua = getUselessArea(node.MBR[i], node.MBR[j]);
 			if (ua > max) {
@@ -194,25 +206,26 @@ void QuadraticSplit(int nFile, int fFile, int childPos) {
 	newN.close();
 
 	// Update and save father
-	father.MBR[childPos] = d1;
+	if (fFile < 0) {
+		father.MBR[0] = d1;
+		father.numKeys = 1;
+	} else {
+		father.MBR[childPos] = d1;
+	}
 	father.MBR[father.numKeys] = d2;
 	father.children[father.numKeys++] = N_CHILD++;
 	f.seekp(0, ios::beg);
 	f.write((char*)&father, sizeof(Rtree));
 	f.close();
-
-	// Free memory
-	delete node;
-	delete father;
-	delete newNode1;
-	delete newNode2;
 }
+
+
 
 void insert(Rectangle c, int nFile, int fFile, int childPos, void (*split)(int, int, int)) {
 	int smaller = 0;
 	int growth = MAX_INT;
 	int tmp, a1, a2;
-	Rtree node = new Rtree();
+	Rtree node;
 	fstream n(to_string(nFile), ios::in | ios::out | ios::binary);
 	n.read((char*)&node, sizeof(Rtree));
 	if (!node.isLeaf) {
@@ -236,75 +249,38 @@ void insert(Rectangle c, int nFile, int fFile, int childPos, void (*split)(int, 
 		}
 		fit(c, node.MBR[smaller], node.MBR[smaller]);
 		n.seekp(0, ios::beg);
-		n.write(node, sizeof(Rtree));
+		n.write((char*)&node, sizeof(Rtree));
 		n.close();
 		insert(c, node.children[smaller], nFile, smaller, split);
 	} else {
 		smaller = node.numKeys;
 		node.MBR[node.numKeys++] = c;
 		n.seekp(0, ios::beg);
-		n.write(node, sizeof(Rtree));
+		n.write((char*)&node, sizeof(Rtree));
 		n.close();
 	}
 	// Check correct size
 	if (node.numKeys > M) {
 		split(nFile, fFile, childPos);
 	}
+}
 
-	delete node;
+void insert(Rectangle c, int root, void (*split)(int, int, int)) {
+	insert(c, root, -1, -1, split);
 }
 
 int main(int argc, char *argv[]) {
-  // test searchRec
-  Rectangle r1 = {-6, -2, 2, 5};
-  Rectangle r2 = {2, -7, 5, -3};
-  Rectangle r3 = {-6, -2, 2, 2};
-  Rectangle r4 = {-6, 2, 2, 5};
-  Rectangle r5 = {2, -7, 5, -3};
-  Rectangle r6 = {-5, -2, -3, 1};
-  Rectangle r7 = {-2, -2, 1, 1};
-  Rectangle r8 = {-4, 3, -1, 4};
-  Rectangle r9 = {3, -6, 4, -4};
+	int n = 1<<9;
+	Rectangle rs[n];
+	for (int i = 0; i < n; i++) {
+		rs[i].xMin = rand() % 500001;
+		rs[i].yMin = rand() % 500001;
+		rs[i].xMax = rs[i].xMin + rand() % 100 + 1;
+		rs[i].yMax = rs[i].yMin + rand() % 100 + 1;
+	}
 
-  Rtree *nodes = (Rtree *)malloc(5 * sizeof(Rtree));
-  nodes[4].isLeaf = true;
-  nodes[4].numKeys = 1;
-  nodes[4].MBR[0] = r9;
-  nodes[3].isLeaf = true;
-  nodes[3].numKeys = 1;
-  nodes[3].MBR[0] = r8;
-  nodes[2].isLeaf = true;
-  nodes[2].numKeys = 2;
-  nodes[2].MBR[0] = r6;
-  nodes[2].MBR[1] = r7;
-  nodes[1].isLeaf = false;
-  nodes[1].numKeys = 1;
-  nodes[1].MBR[0] = r5;
-  nodes[1].children[0] = &nodes[4];
-  nodes[0].isLeaf = false;
-  nodes[0].numKeys = 2;
-  nodes[0].MBR[0] = r3;
-  nodes[0].MBR[1] = r4;
-  nodes[0].children[0] = &nodes[2];
-  nodes[0].children[1] = &nodes[3];
-
-  Rtree *root = (Rtree *)malloc(sizeof(Rtree));
-  root->isLeaf = false;
-  root->numKeys = 2;
-  root->MBR[0] = r1;
-  root->MBR[1] = r2;
-  root->children[0] = &nodes[0];
-  root->children[1] = &nodes[1];
-
-  Rectangle s = {1, -8, 6, 1};
-
-  list<Rectangle> result = search(s, root);
-  cout << &result << "\n";
-  cout << result.size() << "\n";
-  printf("%i %i %i %i\n", result.front().xMin, result.front().yMin,
-         result.front().xMax, result.front().yMax);
-  printf("%i %i %i %i\n", result.back().xMin, result.back().yMin,
-         result.back().xMax, result.back().yMax);
-
-  return 0;
+	for (int i = 0; i < n; i++) {
+		insert(rs[i], root, QuadraticSplit);
+	}
+	return 0;
 }
