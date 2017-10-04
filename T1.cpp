@@ -500,7 +500,7 @@ int main(int argc, char *argv[]) {
     root.close();
 
 	cout << "LinearSplit:\n";
-	for (int k = 9; k < 28; k++) {
+	for (int k = 9; k < 20; k++) {
 		n = 1 << k;
     	begin = chrono::high_resolution_clock::now();
 	    for (int i = 0; i < n; i++) {
@@ -519,7 +519,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	cout << "QuadraticSplit:\n";
-	for (int k = 9; k < 28; k++) {
+	for (int k = 9; k < 20; k++) {
 		n = 1 << k;
     	begin = chrono::high_resolution_clock::now();
 	    for (int i = 0; i < n; i++) {
