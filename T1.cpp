@@ -12,13 +12,16 @@
 #include <vector>
 using namespace std;
 
-#define M 25
-#define m 10
+#define M 203
+#define m 81
 #define MAX_INT numeric_limits<int>::max()
 
 int ROOT = 1;
 int N_CHILD = 2;
-string path = "Rtree/";
+int disk = 0;
+string SharedPath = "Rtree/";
+string Qpath = "QuadraticRtree/";
+string Lpath = "LinearRtree/";
 
 struct Rectangle {
     int xMin, yMin;
@@ -43,29 +46,27 @@ int intersect(Rectangle r1, Rectangle r2) {
              r2.yMax < r1.yMin);
 }
 
-void searchRec(Rectangle C, int nFile, list<Rectangle> &result) {
+void searchRec(Rectangle C, int nFile, list<Rectangle> &result, string path) {
     Rtree node;
-    if (nFile == 0) {
-        return;
-    }
-
+    Rectangle r;
     fstream n(path + to_string(nFile), ios::in | ios::out | ios::binary);
     n.read((char *)&node, sizeof(Rtree));
     n.close();
+    disk += 1;
     for (int i = 0; i < node.numKeys; i++) {
+    	r = node.MBR[i];
         if (intersect(C, node.MBR[i])) {
             if (node.isLeaf) {
                 result.push_back(node.MBR[i]);
-                cout << result.size() << "\n";
             } else
-                searchRec(C, node.children[i], result);
+                searchRec(C, node.children[i], result, path);
         }
     }
 }
 
-list<Rectangle> search(Rectangle C, int root) {
+list<Rectangle> search(Rectangle C, int root, string path) {
     list<Rectangle> result;
-    searchRec(C, root, result);
+    searchRec(C, root, result, path);
     return result;
 }
 
@@ -103,7 +104,7 @@ int getUselessArea(Rectangle d1, Rectangle d2) {
     return getArea(aux) - getArea(d1) - getArea(d2);
 }
 
-void LinearSplit(int node, int father, int childPos) {
+void LinearSplit(int node, int father, int childPos, string path) {
 
     Rtree rtNode, rtFather;
     fstream fNode(path + to_string(node), ios::in | ios::out | ios::binary);
@@ -256,8 +257,7 @@ void LinearSplit(int node, int father, int childPos) {
     N_CHILD++;
 }
 
-void QuadraticSplit(int nFile, int fFile, int childPos) {
-    // cout << "Haciendo split de " << nFile << endl;
+void QuadraticSplit(int nFile, int fFile, int childPos, string path) {
     Rectangle d1, d2, aux1, aux2;
     int pos1, pos2, curr, newRoot;
     int max = 0, ua, d, a1, a2;
@@ -265,8 +265,8 @@ void QuadraticSplit(int nFile, int fFile, int childPos) {
     Rtree node, father;
     fstream f, n;
 
+    // Reading father and current node
     if (fFile < 0) {
-        // cout << "Creando nueva raiz en " << N_CHILD << endl;
         newRoot = N_CHILD++;
         f.open(path + to_string(newRoot), ios::out | ios::trunc | ios::binary);
     } else {
@@ -300,14 +300,9 @@ void QuadraticSplit(int nFile, int fFile, int childPos) {
     }
 
     while (1) {
-        // cout << "Nodo 1 tiene " << newNode1.numKeys << 
-        // " elementos y Nodo 2 tiene " << newNode2.numKeys << " elementos\n";
-        // newNode1 full
+    	// Node 1 full, insert everything else in node 2
         if (newNode1.numKeys >= M - m + 1) {
-            // cout << "Nodo 1 lleno con " << newNode1.numKeys << " elementos\n";
             for (int i = 0; i < node.numKeys; i++) {
-            	// cout << "Nodo 1 tiene " << newNode1.numKeys << 
-        		// " elementos y Nodo 2 tiene " << newNode2.numKeys << " elementos\n";
                 if (!placed[i]) {
                     placed[i] = 1;
                     newNode2.MBR[newNode2.numKeys] = node.MBR[i];
@@ -316,12 +311,10 @@ void QuadraticSplit(int nFile, int fFile, int childPos) {
             }
             break;
         }
-        // newNode2 full
+
+        // Node 2 full, insert everything else in node 1
         if (newNode2.numKeys >= M - m + 1) {
-            // cout << "Nodo 2 lleno con " << newNode2.numKeys << " elementos\n";
             for (int i = 0; i < node.numKeys; i++) {
-            	// cout << "Nodo 1 tiene " << newNode1.numKeys << 
-        		// " elementos y Nodo 2 tiene " << newNode2.numKeys << " elementos\n";
                 if (!placed[i]) {
                     placed[i] = 1;
                     newNode1.MBR[newNode1.numKeys] = node.MBR[i];
@@ -331,6 +324,7 @@ void QuadraticSplit(int nFile, int fFile, int childPos) {
             break;
         }
 
+        // Pick best MBR to insert
         max = 0;
         for (int i = 0; i < node.numKeys; i++) {
             if (!placed[i]) {
@@ -346,6 +340,8 @@ void QuadraticSplit(int nFile, int fFile, int childPos) {
 
         // Mark as placed
         placed[curr] = 1;
+
+        // Add selected Rectangle to optimal MBR
         a1 = getMBRgrowth(node.MBR[curr], d1);
         a2 = getMBRgrowth(node.MBR[curr], d2);
         if (a1 < a2) {
@@ -383,23 +379,16 @@ void QuadraticSplit(int nFile, int fFile, int childPos) {
         }
     }
 
-    // cout << "Es hoja el nodo original que se partio?: " << node.isLeaf << endl;
     // Update/reuse old node with overflow
-    // cout << "Reciclando nodo en " << nFile << " con " << newNode1.numKeys << " hijos\n";
-    // cout << "Es hoja nuevo nodo 1?: " << newNode1.isLeaf << endl;
     n.seekp(0, ios::beg);
     n.write((char *)&newNode1, sizeof(Rtree));
     n.close();
 
     // Create new node in secondary memory
-    // cout << "Creando nuevo nodo en " << N_CHILD << " con " << newNode2.numKeys << " hijos\n";
-    // cout << "Es hoja nuevo nodo 2?: " << newNode2.isLeaf << endl;
     fstream newN(path + to_string(N_CHILD), ios::out | ios::binary);
     newN.write((char *)&newNode2, sizeof(Rtree));
     newN.close();
 
-    // cout << "Actualizando al padre: " << 
-    // (fFile < 0 ? newRoot : fFile) << endl;
     // Update and save father
     if (fFile < 0) {
         father.MBR[0] = d1;
@@ -413,24 +402,19 @@ void QuadraticSplit(int nFile, int fFile, int childPos) {
     }
     father.MBR[father.numKeys] = d2;
     father.children[father.numKeys++] = N_CHILD++;
-    // cout << "Padre quedo con " << father.numKeys << " elementos\n";
     f.write((char *)&father, sizeof(Rtree));
     f.close();
 }
 
 void insert(Rectangle C, int nFile, int fFile, int childPos,
-            void (*split)(int, int, int)) {
+            void (*split)(int, int, int, string), string path) {
     int smaller = 0;
     int growth = MAX_INT;
     int tmp, a1, a2;
     Rtree node;
-    // cout << "Abriendo archivo " << path + to_string(nFile) << endl;
     fstream n(path + to_string(nFile), ios::in | ios::out | ios::binary);
     n.read((char *)&node, sizeof(Rtree));
-    // cout << node.isLeaf << endl;
-    // cout << node.numKeys << endl;
     if (!node.isLeaf) {
-        // cout << "Archivo " << nFile << " no es una hoja\n";
         for (int i = 0; i < node.numKeys; i++) {
             tmp = getMBRgrowth(C, node.MBR[i]);
             if (tmp < growth) {
@@ -449,20 +433,13 @@ void insert(Rectangle C, int nFile, int fFile, int childPos,
                 }
             }
         }
-        // cout << "Actualizando MBR de hijo: " << smaller << "\n";
         fit(C, node.MBR[smaller], node.MBR[smaller]);
-        // cout << "Actualizando archivo\n";
         n.seekp(0, ios::beg);
         n.write((char *)&node, sizeof(Rtree));
         n.close();
-        // cout << "Insertar en hijo " << node.children[smaller] << endl;
-        insert(C, node.children[smaller], nFile, smaller, split);
+        insert(C, node.children[smaller], nFile, smaller, split, path);
     } else {
-        // cout << "Archivo " << nFile << " SI es una hoja\n";
-        // cout << "Contiene " << node.numKeys << " elementos\n";
         node.MBR[node.numKeys++] = C;
-        // cout << "-------numKeys: " << node.numKeys << "\n";
-        // cout << "Actualizando archivo\n";
         n.seekp(0, ios::beg);
         n.write((char *)&node, sizeof(Rtree));
         n.close();
@@ -472,30 +449,59 @@ void insert(Rectangle C, int nFile, int fFile, int childPos,
     n.read((char*)&node, sizeof(Rtree));
     n.close();
     // Check correct size
-    // cout << "Verificando invariante de " << nFile << " con " << node.numKeys << " elementos\n";
     if (node.numKeys > M) {
-        // cout << ">>>split: " << nFile << " " << fFile << " " << childPos
-        // << "\n";
-        split(nFile, fFile, childPos);
+        split(nFile, fFile, childPos, path);
     }
 }
 
-void insert(Rectangle C, int root, void (*split)(int, int, int)) {
-    insert(C, root, -1, -1, split);
+void insert(Rectangle C, int root, void (*split)(int, int, int, string), string path) {
+    insert(C, root, -1, -1, split, path);
+}
+
+double getFilledPercentage(string path) {
+	double sum;
+	fstream n;
+	Rtree node;
+
+	for (int i = 1; i < N_CHILD; i++) {
+		if (i == ROOT) continue;
+		n.open(path + to_string(i), ios::in | ios::binary);
+		n.read((char*)&node, sizeof(Rtree));
+		n.close();
+		sum += (double)(node.numKeys * 100) / (double)M;
+		if (node.numKeys < m && i != ROOT) {
+			cout << "Nodo " << i << " tiene " << node.numKeys << " elementos\n";
+		}
+	}
+
+	return sum / (double)(N_CHILD - 1);
 }
 
 int main(int argc, char *argv[]) {
     srand(time(NULL));
+    
     chrono::high_resolution_clock::time_point begin, end;
     chrono::duration<double> elapsed;
     Rtree init;
     Rectangle r;
-    int n;
+	list<Rectangle> res;
+    double fill;
+    int n, sum;
+    fstream root;
 
+    // Creating initial empty roots in all folders
     init.isLeaf = 1;
     init.numKeys = 0;
 
-    fstream root(path + to_string(ROOT), ios::out | ios::trunc | ios::binary);
+    root.open(SharedPath + to_string(ROOT), ios::out | ios::trunc | ios::binary);
+    root.write((char*)&init, sizeof(Rtree));
+    root.close();
+
+    root.open(Qpath + to_string(ROOT), ios::out | ios::trunc | ios::binary);
+    root.write((char*)&init, sizeof(Rtree));
+    root.close();
+
+    root.open(Lpath + to_string(ROOT), ios::out | ios::trunc | ios::binary);
     root.write((char*)&init, sizeof(Rtree));
     root.close();
 
@@ -509,13 +515,19 @@ int main(int argc, char *argv[]) {
 	        r.xMax = r.xMin + rand() % 100 + 1;
 	        r.yMax = r.yMin + rand() % 100 + 1;
 
-	        insert(r, ROOT, LinearSplit);
+	        insert(r, ROOT, LinearSplit, SharedPath);
 	    }
     	end = chrono::high_resolution_clock::now();
     	elapsed = end - begin;
-    	cout << k << " : " << elapsed.count() * 1000 << "ms\n";
+    	fill = getFilledPercentage(SharedPath);
+    	cout << k << " : " << elapsed.count() * 1000 << "ms : ";
+    	cout << fill << "\% : " << (N_CHILD - 1) * (20 * M + 8) << " bytes\n";
+    	// Reseting global variables and emptying root
     	N_CHILD = 2;
     	ROOT = 1;
+    	root.open(SharedPath + to_string(ROOT), ios::out | ios::trunc | ios::binary);
+	    root.write((char*)&init, sizeof(Rtree));
+	    root.close();
 	}
 
 	cout << "QuadraticSplit:\n";
@@ -528,13 +540,87 @@ int main(int argc, char *argv[]) {
 	        r.xMax = r.xMin + rand() % 100 + 1;
 	        r.yMax = r.yMin + rand() % 100 + 1;
 
-	        insert(r, ROOT, QuadraticSplit);
+	        insert(r, ROOT, QuadraticSplit, SharedPath);
 	    }
     	end = chrono::high_resolution_clock::now();
     	elapsed = end - begin;
-    	cout << k << " : " << elapsed.count() * 1000 << "ms\n";
+    	fill = getFilledPercentage(SharedPath);
+    	cout << k << " : " << elapsed.count() * 1000 << "ms : ";
+    	cout << fill << "\% : " << (N_CHILD - 1) * (20 * M + 8) << " bytes\n";
+    	// Reseting global variables and emptying root
     	N_CHILD = 2;
     	ROOT = 1;
+    	root.open(SharedPath + to_string(ROOT), ios::out | ios::trunc | ios::binary);
+	    root.write((char*)&init, sizeof(Rtree));
+	    root.close();
+	}
+	
+	cout << "Search test:\n";
+	for (int k = 9; k < 16; k++) {
+		n = 1 << k;
+		cout << "k = " << k << endl;
+		Rectangle rs[n];
+		Rectangle sr[n/10];
+	    for (int i = 0; i < n; i++) {
+	        rs[i].xMin = rand() % 500001;
+	        rs[i].yMin = rand() % 500001;
+	        rs[i].xMax = rs[i].xMin + rand() % 100 + 1;
+	        rs[i].yMax = rs[i].yMin + rand() % 100 + 1;
+	    }
+
+
+		for (int i = 0; i < n/10; i++) {
+	        sr[i].xMin = rand() % 500001;
+	        sr[i].yMin = rand() % 500001;
+	        sr[i].xMax = sr[i].xMin + rand() % 300 + 1;
+	        sr[i].yMax = sr[i].yMin + rand() % 300 + 1;
+		}
+
+	    for (int i = 0; i < n; i++)
+	        insert(rs[i], ROOT, LinearSplit, Lpath);    
+
+	    sum = 0;
+		begin = chrono::high_resolution_clock::now();
+		for (int i = 0; i < n/10; i++){
+		    res = search(sr[i], ROOT, Lpath);
+		    sum += res.size();
+		}
+	    end = chrono::high_resolution_clock::now();
+		elapsed = end - begin;
+
+	    cout << "Linear : " << elapsed.count() * 1000 << "ms : ";
+		cout << (double)disk / (n/10) << " acs/srch : " <<  sum << " found\n";
+
+	    N_CHILD = 2;
+	    ROOT = 1;
+	    disk = 0;
+
+	    root.open(Lpath + to_string(ROOT), ios::out | ios::trunc | ios::binary);
+	    root.write((char*)&init, sizeof(Rtree));
+	    root.close();
+
+		for (int i = 0; i < n; i++)
+	        insert(rs[i], ROOT, QuadraticSplit, Qpath);
+
+		sum = 0;
+		begin = chrono::high_resolution_clock::now();
+		for (int i = 0; i < n/10; i++){
+		    res = search(sr[i], ROOT, Qpath);
+		    sum += res.size();
+		}
+		end = chrono::high_resolution_clock::now();
+		elapsed = end - begin;
+
+	    cout << "Quadratic : " << elapsed.count() * 1000 << "ms : ";
+		cout << (double)disk / (n/10) << " acs/srch : " << sum << " found\n";
+		
+		N_CHILD = 2;
+	    ROOT = 1;
+	    disk = 0;
+	    
+	    root.open(Qpath + to_string(ROOT), ios::out | ios::trunc | ios::binary);
+	    root.write((char*)&init, sizeof(Rtree));
+	    root.close();
 	}
 
     return 0;
