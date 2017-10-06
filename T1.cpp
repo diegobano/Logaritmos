@@ -46,10 +46,10 @@ int intersect(Rectangle r1, Rectangle r2) {
              r2.yMax < r1.yMin);
 }
 
-void searchRec(Rectangle C, int nFile, list<Rectangle> &result, string path) {
+void searchRec(Rectangle C, int nodeFile, list<Rectangle> &result, string path) {
     Rtree node;
     Rectangle r;
-    fstream n(path + to_string(nFile), ios::in | ios::out | ios::binary);
+    fstream n(path + to_string(nodeFile), ios::in | ios::out | ios::binary);
     n.read((char *)&node, sizeof(Rtree));
     n.close();
     disk += 1;
@@ -104,11 +104,11 @@ int getUselessArea(Rectangle d1, Rectangle d2) {
     return getArea(aux) - getArea(d1) - getArea(d2);
 }
 
-void LinearSplit(int node, int father, int childPos, string path) {
+void LinearSplit(int nodeFile, int fatherFile, int childPos, string path) {
 
-    Rtree rtNode, rtFather;
-    fstream fNode(path + to_string(node), ios::in | ios::out | ios::binary);
-    fNode.read((char *)&rtNode, sizeof(Rtree));
+    Rtree node, father;
+    fstream fNode(path + to_string(nodeFile), ios::in | ios::out | ios::binary);
+    fNode.read((char *)&node, sizeof(Rtree));
 
     // LinearSplit
     int xMinRange, xMaxRange, yMinRange, yMaxRange;
@@ -120,30 +120,30 @@ void LinearSplit(int node, int father, int childPos, string path) {
     xMinHighIndex = xMaxLowIndex = yMinHighIndex = yMaxLowIndex = 0;
 
     vector<int> MBRset;
-    for (int i = 0; i < rtNode.numKeys; i++) {
+    for (int i = 0; i < node.numKeys; i++) {
         MBRset.push_back(i);
-        if (rtNode.MBR[i].xMin < xMinRange)
-            xMinRange = rtNode.MBR[i].xMin;
-        if (rtNode.MBR[i].xMax > xMaxRange)
-            xMaxRange = rtNode.MBR[i].xMax;
-        if (rtNode.MBR[i].yMin < yMinRange)
-            yMinRange = rtNode.MBR[i].yMin;
-        if (rtNode.MBR[i].yMax > yMaxRange)
-            yMaxRange = rtNode.MBR[i].yMax;
-        if (rtNode.MBR[i].xMax < xMinHigh) {
-            xMinHigh = rtNode.MBR[i].xMax;
+        if (node.MBR[i].xMin < xMinRange)
+            xMinRange = node.MBR[i].xMin;
+        if (node.MBR[i].xMax > xMaxRange)
+            xMaxRange = node.MBR[i].xMax;
+        if (node.MBR[i].yMin < yMinRange)
+            yMinRange = node.MBR[i].yMin;
+        if (node.MBR[i].yMax > yMaxRange)
+            yMaxRange = node.MBR[i].yMax;
+        if (node.MBR[i].xMax < xMinHigh) {
+            xMinHigh = node.MBR[i].xMax;
             xMinHighIndex = i;
         }
-        if (rtNode.MBR[i].xMin > xMaxLow) {
-            xMaxLow = rtNode.MBR[i].xMin;
+        if (node.MBR[i].xMin > xMaxLow) {
+            xMaxLow = node.MBR[i].xMin;
             xMaxLowIndex = i;
         }
-        if (rtNode.MBR[i].yMax < yMinHigh) {
-            yMinHigh = rtNode.MBR[i].yMax;
+        if (node.MBR[i].yMax < yMinHigh) {
+            yMinHigh = node.MBR[i].yMax;
             yMinHighIndex = i;
         }
-        if (rtNode.MBR[i].yMin > yMaxLow) {
-            yMaxLow = rtNode.MBR[i].yMin;
+        if (node.MBR[i].yMin > yMaxLow) {
+            yMaxLow = node.MBR[i].yMin;
             yMaxLowIndex = i;
         }
     }
@@ -160,15 +160,15 @@ void LinearSplit(int node, int father, int childPos, string path) {
     Rtree first, second;
     Rectangle firstRec, secondRec;
 
-    first.isLeaf = rtNode.isLeaf;
+    first.isLeaf = node.isLeaf;
     first.numKeys = 1;
-    first.MBR[0] = firstRec = rtNode.MBR[firstIndex];
-    first.children[0] = rtNode.children[firstIndex];
+    first.MBR[0] = firstRec = node.MBR[firstIndex];
+    first.children[0] = node.children[firstIndex];
 
-    second.isLeaf = rtNode.isLeaf;
+    second.isLeaf = node.isLeaf;
     second.numKeys = 1;
-    second.MBR[0] = secondRec = rtNode.MBR[secondIndex];
-    second.children[0] = rtNode.children[secondIndex];
+    second.MBR[0] = secondRec = node.MBR[secondIndex];
+    second.children[0] = node.children[secondIndex];
 
     int firstGrowth, secondGrowth;
     int firstArea, secondArea;
@@ -177,41 +177,41 @@ void LinearSplit(int node, int father, int childPos, string path) {
     for (vector<int>::iterator it = MBRset.begin(); it != MBRset.end(); ++it) {
         if (first.numKeys == maxSize) {
             // add to second
-            addMBRtoRectangle(second, rtNode.MBR[*it], rtNode.children[*it],
+            addMBRtoRectangle(second, node.MBR[*it], node.children[*it],
                               secondRec);
         } else if (second.numKeys == maxSize) {
             // add to first
-            addMBRtoRectangle(first, rtNode.MBR[*it], rtNode.children[*it],
+            addMBRtoRectangle(first, node.MBR[*it], node.children[*it],
                               firstRec);
         } else {
-            firstGrowth = getMBRgrowth(rtNode.MBR[*it], firstRec);
-            secondGrowth = getMBRgrowth(rtNode.MBR[*it], secondRec);
+            firstGrowth = getMBRgrowth(node.MBR[*it], firstRec);
+            secondGrowth = getMBRgrowth(node.MBR[*it], secondRec);
             if (firstGrowth == secondGrowth) {
-                firstArea = getMBRarea(rtNode.MBR[*it], firstRec);
-                secondArea = getMBRarea(rtNode.MBR[*it], secondRec);
+                firstArea = getMBRarea(node.MBR[*it], firstRec);
+                secondArea = getMBRarea(node.MBR[*it], secondRec);
                 if (firstArea == secondArea) {
                     if (first.numKeys == second.numKeys) {
                         if (rand() % 2) {
-                            addMBRtoRectangle(first, rtNode.MBR[*it],
-                                              rtNode.children[*it], firstRec);
+                            addMBRtoRectangle(first, node.MBR[*it],
+                                              node.children[*it], firstRec);
                             continue;
                         }
                     } else if (first.numKeys < second.numKeys) {
-                        addMBRtoRectangle(first, rtNode.MBR[*it],
-                                          rtNode.children[*it], firstRec);
+                        addMBRtoRectangle(first, node.MBR[*it],
+                                          node.children[*it], firstRec);
                         continue;
                     }
                 } else if (firstArea < secondArea) {
-                    addMBRtoRectangle(first, rtNode.MBR[*it],
-                                      rtNode.children[*it], firstRec);
+                    addMBRtoRectangle(first, node.MBR[*it],
+                                      node.children[*it], firstRec);
                     continue;
                 }
             } else if (firstGrowth < secondGrowth) {
-                addMBRtoRectangle(first, rtNode.MBR[*it], rtNode.children[*it],
+                addMBRtoRectangle(first, node.MBR[*it], node.children[*it],
                                   firstRec);
                 continue;
             }
-            addMBRtoRectangle(second, rtNode.MBR[*it], rtNode.children[*it],
+            addMBRtoRectangle(second, node.MBR[*it], node.children[*it],
                               secondRec);
         }
     }
@@ -226,13 +226,13 @@ void LinearSplit(int node, int father, int childPos, string path) {
     fNewNode.write((char *)&second, sizeof(Rtree));
     fNewNode.close();
 
-    if (father == -1) {
-        // cout << "father -1\n";
+    if (fatherFile == -1) {
+        // cout << "fatherFile -1\n";
         Rtree newRoot;
         newRoot.isLeaf = false;
         newRoot.numKeys = 2;
         newRoot.MBR[0] = firstRec;
-        newRoot.children[0] = node;
+        newRoot.children[0] = nodeFile;
         newRoot.MBR[1] = secondRec;
         newRoot.children[1] = N_CHILD;
         ROOT = ++N_CHILD;
@@ -243,21 +243,21 @@ void LinearSplit(int node, int father, int childPos, string path) {
         // cout << "ROOT: " << ROOT << '\n';
     } else {
 
-        fstream fFather(path + to_string(father),
+        fstream fFather(path + to_string(fatherFile),
                         ios::in | ios::out | ios::binary);
-        fFather.read((char *)&rtFather, sizeof(Rtree));
-        rtFather.MBR[childPos] = firstRec;
-        rtFather.MBR[rtFather.numKeys] = secondRec;
-        rtFather.children[rtFather.numKeys] = N_CHILD;
-        rtFather.numKeys++;
+        fFather.read((char *)&father, sizeof(Rtree));
+        father.MBR[childPos] = firstRec;
+        father.MBR[father.numKeys] = secondRec;
+        father.children[father.numKeys] = N_CHILD;
+        father.numKeys++;
         fFather.seekp(0, ios::beg);
-        fFather.write((char *)&rtFather, sizeof(Rtree));
+        fFather.write((char *)&father, sizeof(Rtree));
         fFather.close();
     }
     N_CHILD++;
 }
 
-void QuadraticSplit(int nFile, int fFile, int childPos, string path) {
+void QuadraticSplit(int nodeFile, int fatherFile, int childPos, string path) {
     Rectangle d1, d2, aux1, aux2;
     int pos1, pos2, curr, newRoot;
     int max = 0, ua, d, a1, a2;
@@ -266,14 +266,14 @@ void QuadraticSplit(int nFile, int fFile, int childPos, string path) {
     fstream f, n;
 
     // Reading father and current node
-    if (fFile < 0) {
+    if (fatherFile < 0) {
         newRoot = N_CHILD++;
         f.open(path + to_string(newRoot), ios::out | ios::trunc | ios::binary);
     } else {
-        f.open(path + to_string(fFile), ios::in | ios::out | ios::binary);
+        f.open(path + to_string(fatherFile), ios::in | ios::out | ios::binary);
         f.read((char *)&father, sizeof(Rtree));
     }
-    n.open(path + to_string(nFile), ios::in | ios::out | ios::binary);
+    n.open(path + to_string(nodeFile), ios::in | ios::out | ios::binary);
     n.read((char *)&node, sizeof(Rtree));
 
     // Setting initial values for new nodes
@@ -390,7 +390,7 @@ void QuadraticSplit(int nFile, int fFile, int childPos, string path) {
     newN.close();
 
     // Update and save father
-    if (fFile < 0) {
+    if (fatherFile < 0) {
         father.MBR[0] = d1;
         father.children[0] = ROOT;
         father.numKeys = 1;
@@ -406,13 +406,13 @@ void QuadraticSplit(int nFile, int fFile, int childPos, string path) {
     f.close();
 }
 
-void insert(Rectangle C, int nFile, int fFile, int childPos,
+void insert(Rectangle C, int nodeFile, int fatherFile, int childPos,
             void (*split)(int, int, int, string), string path) {
     int smaller = 0;
     int growth = MAX_INT;
     int tmp, a1, a2;
     Rtree node;
-    fstream n(path + to_string(nFile), ios::in | ios::out | ios::binary);
+    fstream n(path + to_string(nodeFile), ios::in | ios::out | ios::binary);
     n.read((char *)&node, sizeof(Rtree));
     if (!node.isLeaf) {
         for (int i = 0; i < node.numKeys; i++) {
@@ -437,7 +437,7 @@ void insert(Rectangle C, int nFile, int fFile, int childPos,
         n.seekp(0, ios::beg);
         n.write((char *)&node, sizeof(Rtree));
         n.close();
-        insert(C, node.children[smaller], nFile, smaller, split, path);
+        insert(C, node.children[smaller], nodeFile, smaller, split, path);
     } else {
         node.MBR[node.numKeys++] = C;
         n.seekp(0, ios::beg);
@@ -445,12 +445,12 @@ void insert(Rectangle C, int nFile, int fFile, int childPos,
         n.close();
     }
 
-    n.open(path + to_string(nFile), ios::in | ios::binary);
+    n.open(path + to_string(nodeFile), ios::in | ios::binary);
     n.read((char*)&node, sizeof(Rtree));
     n.close();
     // Check correct size
     if (node.numKeys > M) {
-        split(nFile, fFile, childPos, path);
+        split(nodeFile, fatherFile, childPos, path);
     }
 }
 
