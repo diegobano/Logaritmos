@@ -21,13 +21,19 @@ mkdir Rtree QuadraticRtree LinearRtree
 El código se encuentra dentro del archivo T1.cpp, el cuál se compila mediante el siguiente comando:
 
 ```
-g++ -std=c++11 -o T1
+g++ -std=c++11 -o T1 T1.cpp
 ```
 
 Y se ejecuta con:
 
 ```
 ./T1
+```
+
+Esto ejecutará todos las pruebas creadas y mostrará los resultados en la consola. En caso de que se quieran guardar estos resultados en un archivo, se puede utilizar la siguiente variación del comando para ejecutarlo:
+
+```
+./T1 >> nombreArchivo
 ```
 
 ### Repositorio
