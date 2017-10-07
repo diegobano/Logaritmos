@@ -106,17 +106,24 @@ int getUselessArea(Rectangle d1, Rectangle d2) {
 
 void LinearSplit(int nodeFile, int fatherFile, int childPos, string path) {
 
-    Rtree node, father;
-    fstream fNode(path + to_string(nodeFile), ios::in | ios::out | ios::binary);
-    fNode.read((char *)&node, sizeof(Rtree));
-
     // LinearSplit
     int xMinRange, xMaxRange, yMinRange, yMaxRange;
     int xMinHigh, xMaxLow, yMinHigh, yMaxLow;
+    int xMinHighIndex, xMaxLowIndex, yMinHighIndex, yMaxLowIndex;
+    int xNormDist, yNormDist;
+    int firstGrowth, secondGrowth;
+    int firstArea, secondArea;
+    int maxSize = M + 1 - m;
+    Rtree node, father;
+    Rtree first, second;
+    Rectangle firstRec, secondRec;
+
+    fstream fNode(path + to_string(nodeFile), ios::in | ios::out | ios::binary);
+    fNode.read((char *)&node, sizeof(Rtree));
+
     xMinRange = yMinRange = xMinHigh = yMinHigh = MAX_INT;
     xMaxRange = yMaxRange = xMaxLow = yMaxLow = -MAX_INT;
 
-    int xMinHighIndex, xMaxLowIndex, yMinHighIndex, yMaxLowIndex;
     xMinHighIndex = xMaxLowIndex = yMinHighIndex = yMaxLowIndex = 0;
 
     vector<int> MBRset;
@@ -147,18 +154,14 @@ void LinearSplit(int nodeFile, int fatherFile, int childPos, string path) {
             yMaxLowIndex = i;
         }
     }
-    int xNormDist = (xMaxLow - xMinHigh) / (xMaxRange - xMinRange);
-    int yNormDist = (yMaxLow - yMinHigh) / (yMaxRange - yMinRange);
+    xNormDist = (xMaxLow - xMinHigh) / (xMaxRange - xMinRange);
+    yNormDist = (yMaxLow - yMinHigh) / (yMaxRange - yMinRange);
 
     int firstIndex = xNormDist > yNormDist ? xMinHighIndex : yMinHighIndex;
     int secondIndex = xNormDist > yNormDist ? xMaxLowIndex : yMaxLowIndex;
     MBRset.erase(MBRset.begin() + max(firstIndex, secondIndex));
     MBRset.erase(MBRset.begin() + min(firstIndex, secondIndex));
     random_shuffle(MBRset.begin(), MBRset.end());
-    // cout << "firstIndex: " << firstIndex << "\nsecondIndex: " << secondIndex
-    // << '\n';
-    Rtree first, second;
-    Rectangle firstRec, secondRec;
 
     first.isLeaf = node.isLeaf;
     first.numKeys = 1;
@@ -170,9 +173,6 @@ void LinearSplit(int nodeFile, int fatherFile, int childPos, string path) {
     second.MBR[0] = secondRec = node.MBR[secondIndex];
     second.children[0] = node.children[secondIndex];
 
-    int firstGrowth, secondGrowth;
-    int firstArea, secondArea;
-    int maxSize = M + 1 - m;
 
     for (vector<int>::iterator it = MBRset.begin(); it != MBRset.end(); ++it) {
         if (first.numKeys == maxSize) {
@@ -215,19 +215,17 @@ void LinearSplit(int nodeFile, int fatherFile, int childPos, string path) {
                               secondRec);
         }
     }
-    // cout << "second: " << second.numKeys << "\nfirst: " << first.numKeys
-    // << '\n';
+
     fNode.seekp(0, ios::beg);
     fNode.write((char *)&first, sizeof(Rtree));
     fNode.close();
-    // cout << "N_CHILD: " << N_CHILD << '\n';
+
     fstream fNewNode(path + to_string(N_CHILD),
                      ios::out | ios::trunc | ios::binary);
     fNewNode.write((char *)&second, sizeof(Rtree));
     fNewNode.close();
 
     if (fatherFile == -1) {
-        // cout << "fatherFile -1\n";
         Rtree newRoot;
         newRoot.isLeaf = false;
         newRoot.numKeys = 2;
@@ -240,7 +238,6 @@ void LinearSplit(int nodeFile, int fatherFile, int childPos, string path) {
                          ios::out | ios::trunc | ios::binary);
         fNewRoot.write((char *)&newRoot, sizeof(Rtree));
         fNewRoot.close();
-        // cout << "ROOT: " << ROOT << '\n';
     } else {
 
         fstream fFather(path + to_string(fatherFile),
@@ -469,9 +466,6 @@ double getFilledPercentage(string path) {
 		n.read((char*)&node, sizeof(Rtree));
 		n.close();
 		sum += (double)(node.numKeys * 100) / (double)M;
-		if (node.numKeys < m && i != ROOT) {
-			cout << "Nodo " << i << " tiene " << node.numKeys << " elementos\n";
-		}
 	}
 
 	return sum / (double)(N_CHILD - 1);

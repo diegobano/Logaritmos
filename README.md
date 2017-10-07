@@ -36,6 +36,8 @@ Esto ejecutará todos las pruebas creadas y mostrará los resultados en la conso
 ./T1 >> nombreArchivo
 ```
 
+Si el archivo ya existe, todo el texto se agregará al final de este (no se sobreescribirá).
+
 ### Repositorio
 
 http://www.github.com/diegobano/Logaritmos
