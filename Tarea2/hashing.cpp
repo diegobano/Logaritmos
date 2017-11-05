@@ -1,32 +1,4 @@
-#include <algorithm>
-#include <chrono>
-#include <ctime>
-#include <fstream>
-#include <iostream>
-#include <limits>
-#include <stdlib.h>
-#include <string>
-#include <typeinfo>
-#include <vector>
-
-using namespace std;
-
-class Hashing
-{
-private:
-	int seed, size;
-	string *keys;
-	vector<int> *values;
-public:
-	Hashing(int, int);
-	Hashing(int);
-	Hashing();
-	~Hashing();
-	int hash(string);
-	void insert(string, int);
-	vector<int> search(string);
-	int count(string);
-};
+#include "hashing.hpp"
 
 Hashing::Hashing(int size, int seed) {
 	this->size = size;
@@ -65,7 +37,7 @@ Hashing::~Hashing() {
 
 int Hashing::hash(string s) {
 	int sum = 0;
-	for (int i = 0; i < s.length(); i++) {
+	for (unsigned int i = 0; i < s.length(); i++) {
 		sum = (sum * this->seed) + s[i];
 	}
 	return (sum % size);
@@ -106,21 +78,4 @@ vector<int> Hashing::search(string s) {
 int Hashing::count(string s) {
 	vector<int> res = this->search(s);
 	return res.size();
-}
-
-int main(int argc, char const *argv[])
-{
-	vector<int> r, r2;
-	cout << "Creando Hash\n";
-	Hashing h(10);
-	cout << "Insertando hola\n";
-	h.insert("hola", 0);
-	cout << "Buscando hola\n";
-	r = h.search("hola");
-	cout << r.at(0) << "\n";
-	cout << "Contando ocurrencias de hola\n";
-	cout << h.count("hola") << "\n";
-	r2 = h.search("chao");
-	cout << h.count("chao") << "\n";
-	return 0;
 }
