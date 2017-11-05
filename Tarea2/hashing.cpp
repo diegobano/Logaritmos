@@ -93,6 +93,7 @@ vector<int> Hashing::search(string s) {
 	while (1) {
 		if (this->keys[index] == s) {
 			res =  this->values[index];
+			break;
 		} else if (this->keys[index] == "" || index == ini){
 			break;
 		} else {
@@ -109,7 +110,7 @@ int Hashing::count(string s) {
 
 int main(int argc, char const *argv[])
 {
-	vector<int> r;
+	vector<int> r, r2;
 	cout << "Creando Hash\n";
 	Hashing h(10);
 	cout << "Insertando hola\n";
@@ -117,6 +118,9 @@ int main(int argc, char const *argv[])
 	cout << "Buscando hola\n";
 	r = h.search("hola");
 	cout << r.at(0) << "\n";
+	cout << "Contando ocurrencias de hola\n";
 	cout << h.count("hola") << "\n";
+	r2 = h.search("chao");
+	cout << h.count("chao") << "\n";
 	return 0;
 }
