@@ -53,3 +53,7 @@ dkms.conf
 
 # Automatically generated nodes
 [0-9]*
+
+# Executables
+test
+hashing
