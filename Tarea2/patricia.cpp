@@ -1,18 +1,5 @@
 // patricia.cpp
-#include <cstring>
-#include <iostream>
-#include <string>
-#include <utility>
-#include <vector>
-using namespace std;
-
-vector<string> table;
-
-struct Ptrie {
-  int isLeaf;
-  string label;
-  vector<Ptrie *> children;
-};
+#include "patricia.hpp"
 
 pair<pair<int, Ptrie *>, pair<string::iterator, string::iterator>>
 search_it(Ptrie *node, string::iterator it_key, string::iterator end) {
@@ -108,6 +95,7 @@ void insert(Ptrie *root, string key) {
   }
 }
 
+/*
 int main(int argc, char const *argv[]) {
 
   Ptrie *test_root = new (Ptrie);
@@ -124,3 +112,4 @@ int main(int argc, char const *argv[]) {
   cout << search(test_root, "ruber") << endl;
   return 0;
 }
+*/

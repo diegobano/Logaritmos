@@ -8,11 +8,12 @@
 #include <vector>
 
 #include "hashing.hpp"
+#include "patricia.hpp"
 
 int main(int argc, char const *argv[])
 {
-	ifstream text;
-	fstream formatted("formateado.txt", ios::in | ios::out | ios::trunc);
+	ifstream text, text2, text3;
+	fstream formatted, form2, form3;
 	string word, fword;
 	int filesize = 0;
 	unsigned int i = 0;
@@ -20,10 +21,18 @@ int main(int argc, char const *argv[])
     chrono::duration<double> elapsed;
 
 
-	if (argc > 1) {
-		text.open(argv[1]);
+	if (argc == 2) {
+		text.open("ejemplo.txt");
+		formatted.open("formateado.txt", ios::in | ios::out | ios::trunc);
+		text2.open("ejemplo3.txt");
+
+	} else if (argc == 3) {
+
+	} else if (argc == 4) {
+
 	} else {
 		text.open("ejemplo.txt");
+
 	}
 
 	cout << "Formateando texto\n";
@@ -68,6 +77,7 @@ int main(int argc, char const *argv[])
 				i++;
 			}
 		}
+
 		if (word.length() > 0) {
 			filesize++;
 			formatted << word << " ";
