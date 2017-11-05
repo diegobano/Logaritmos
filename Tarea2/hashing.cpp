@@ -1,3 +1,11 @@
+#include <fstream>
+#include <iostream>
+#include <algorithm>
+#include <stdlib.h>
+#include <string>
+#include <typeinfo>
+#include <vector>
+
 #include "hashing.hpp"
 
 Hashing::Hashing(int size, int seed) {
@@ -36,22 +44,26 @@ Hashing::~Hashing() {
 }
 
 int Hashing::hash(string s) {
-	int sum = 0;
+	unsigned int sum = 0;
 	for (unsigned int i = 0; i < s.length(); i++) {
 		sum = (sum * this->seed) + s[i];
 	}
-	return (sum % size);
+	return (int) (sum % this->size);
 }
 
 void Hashing::insert(string s, int pos) {
 	int index = this->hash(s);
 	int ini = index;
+
 	while (1) {
-		if (values[index].size() <= 0) {
+		if (this->values[index].size() <= 0) {
 			this->keys[index] = s;
 			this->values[index].push_back(pos);
 			break;
-		} else {
+		} else if (this->keys[index] == s) {
+			this->values[index].push_back(pos);
+			break;
+		}else {
 			index = (index + 1) % this->size;
 			if (index == ini) exit(1);
 		}
