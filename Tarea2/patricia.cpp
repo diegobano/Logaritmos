@@ -105,7 +105,7 @@ void Ptrie::insert(string key, int value) {
     }
   }
 }
-
+/*
 int main(int argc, char const *argv[]) {
 
   Ptrie *test_root = new Ptrie();
@@ -124,3 +124,4 @@ int main(int argc, char const *argv[]) {
   cout << test_root->search("rubero").size() << endl;
   return 0;
 }
+*/
