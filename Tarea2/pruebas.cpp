@@ -9,6 +9,7 @@
 
 #include "hashing.hpp"
 #include "patricia.hpp"
+#include "ternario.hpp"
 
 int main(int argc, char const *argv[])
 {
