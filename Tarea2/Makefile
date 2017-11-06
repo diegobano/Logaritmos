@@ -1,6 +1,6 @@
 OBJS = pruebas.o hashing.o patricia.o
-HEADERS = hashing.hpp patricia.hpp
-FILES = hashing.cpp pruebas.cpp patricia.cpp
+HEADERS = hashing.hpp patricia.hpp ternario.hpp
+FILES = hashing.cpp pruebas.cpp patricia.cpp ternario.cpp
 CC = g++
 DEBUG = -g
 CFLAGS = -std=c++11 -Wall -c $(DEBUG)
@@ -14,6 +14,9 @@ hashing.o: hashing.cpp hashing.hpp
 
 patricia.o: patricia.cpp patricia.hpp
 	$(CC) $(CFLAGS) patricia.cpp
+
+ternario.o: ternario.cpp ternario.hpp
+	$(CC) $(CFLAGS) ternario.cpp
 
 pruebas.o: pruebas.cpp $(HEADERS)
 	$(CC) $(CFLAGS) pruebas.cpp
