@@ -24,6 +24,7 @@ public:
 	void insert(string, int);
 	vector<int> search(string);
 	int count(string);
+	int unique_count();
 };
 
 #endif

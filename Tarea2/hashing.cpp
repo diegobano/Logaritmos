@@ -91,3 +91,12 @@ int Hashing::count(string s) {
 	vector<int> res = this->search(s);
 	return res.size();
 }
+
+int Hashing::unique_count() {
+	int cnt = 0;
+	for (int i = 0; i < this->size; i++) {
+		if (this->values[i].size() > 0)
+			cnt++;
+	}
+	return cnt;
+}
