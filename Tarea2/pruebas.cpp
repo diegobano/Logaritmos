@@ -7,23 +7,29 @@
 #include <typeinfo>
 #include <vector>
 
+#include "dictionary.hpp"
 #include "hashing.hpp"
 #include "patricia.hpp"
 #include "ternario.hpp"
 
+
+
 int main(int argc, char const *argv[])
 {
-	ifstream text, text2, text3;
-	fstream formatted, form2, form3;
+	typedef unsigned int uint;
+	//Useful variables.
+	ifstream text;
+	fstream formatted;
 	string word, fword;
-	int filesize = 0;
-	int ejemplos = 13;
-	unsigned int i = 0;
+	int filesize = 0, unique_count, ejemplos = 13, next, pos;
+	uint i = 0;
 	chrono::high_resolution_clock::time_point begin, end;
     chrono::duration<double> elapsed;
     Hashing **h;
     Ternario **t;
     Ptrie **p;
+    vector<string> words, unique_words;
+    vector<int> positions;
 
     h = new Hashing*[ejemplos];
     t = new Ternario*[ejemplos];
@@ -84,40 +90,67 @@ int main(int argc, char const *argv[])
 
 		formatted.seekp(0, ios::beg);
 		h[k] = new Hashing(filesize);
-		t[k] = new Ternario();
+		//t[k] = new Ternario();
 		p[k] = new Ptrie();
 
-		cout << "Creando Hashing con " << (int) (filesize) << " llaves posibles\n";
+		words.clear();
+		positions.clear();
+		unique_words.clear();
+
+		pos = 0;
+		while (formatted >> word) {
+			words.push_back(word);
+			positions.push_back(pos);
+			pos += word.length() + 1;
+		}
+
+		cout << "Archivo con " << (int) (filesize) << " palabras validas.\n";
 		int pos = 0;
 		begin = chrono::high_resolution_clock::now();
-		while (formatted >> word) {
-			h[k]->insert(word, pos);
+
+		for (uint j = 0; j < words.size(); j++) {
+			h[k]->insert(words.at(j), positions.at(j));
 			pos += word.length() + 1;
 		}
 		end = chrono::high_resolution_clock::now();
 		elapsed = end - begin;
-		cout << h[k]->unique_count() << " palabras distintas\n";
-		cout << "Hashing: " << elapsed.count() * 1000 << "ms\n";
+		unique_count = h[k]->unique_count();
+		unique_words = h[k]->unique_values();
 
+		cout << unique_count << " palabras distintas\n\n";
+		cout << "Tiempos de construccion:\n";
+		cout << "Hashing: " << elapsed.count() * 1000 << " ms\n";
+		/*
 		pos = 0;
 		begin = chrono::high_resolution_clock::now();
-		while (formatted >> word) {
-			t[k]->insert(word, pos);
+		for (uint j = 0; j < words.size(); j++) {
+			t[k]->insert(words.at(j));
 			pos += word.length() + 1;
 		}
 		end = chrono::high_resolution_clock::now();
 		elapsed = end - begin;
-		cout << "Ternario: " << elapsed.count() * 1000 << "ms\n";
-
+		cout << "Ternario: " << elapsed.count() * 1000 << " ms\n";
+		*/
 		pos = 0;
 		begin = chrono::high_resolution_clock::now();
-		while (formatted >> word) {
-			p[k]->insert(word);
+		for (uint j = 0; j < words.size(); j++) {
+			p[k]->insert(words.at(j), positions.at(j));
 			pos += word.length() + 1;
 		}
 		end = chrono::high_resolution_clock::now();
 		elapsed = end - begin;
-		cout << "Patricia: " << elapsed.count() * 1000 << "ms\n";
+		cout << "Patricia: " << elapsed.count() * 1000 << " ms\n";
+
+		cout << "hashing_" << k << " = [";
+		for (int j = 0; j < unique_count / 10; j++) {
+			next = rand() % unique_count;
+			begin = chrono::high_resolution_clock::now();
+			h[k]->search(words.at(next));
+			end = chrono::high_resolution_clock::now();
+			elapsed = end - begin;
+			cout << words.at(next).length() << ", " << elapsed.count() << ";\n";
+		}
+		cout << "]\n";
 
 		formatted.seekp(0, ios::beg);
 		formatted.close();

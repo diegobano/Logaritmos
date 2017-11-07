@@ -6,10 +6,11 @@
 #include <string>
 #include <typeinfo>
 #include <vector>
+#include "dictionary.hpp"
 
 using namespace std;
 
-class Hashing
+class Hashing : public Dictionary
 {
 private:
 	int seed, size;
@@ -25,6 +26,7 @@ public:
 	vector<int> search(string);
 	int count(string);
 	int unique_count();
+	vector<string> unique_values();
 };
 
 #endif

@@ -1,5 +1,5 @@
 OBJS = pruebas.o hashing.o patricia.o
-HEADERS = hashing.hpp patricia.hpp ternario.hpp
+HEADERS = hashing.hpp patricia.hpp ternario.hpp dictionary.hpp
 FILES = hashing.cpp pruebas.cpp patricia.cpp ternario.cpp
 CC = g++
 DEBUG = -g
