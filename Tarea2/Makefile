@@ -22,7 +22,7 @@ pruebas.o: pruebas.cpp $(HEADERS)
 	$(CC) $(CFLAGS) pruebas.cpp
 
 clean:
-	\rm *.o test
+	\rm *.o test formateado*
 
 tar:
 	tar cfv tarea2.tar $(FILES) $(HEADERS)
