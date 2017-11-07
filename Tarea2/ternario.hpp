@@ -6,20 +6,23 @@
 #include <typeinfo>
 #include <fstream>
 #include <iostream>
+#include <vector>
+
 
 using namespace std;
 
 class Ternario {
 	private:
 		char splitchar;
+		vector<int> values;
 		Ternario *lowchild;
 		Ternario *equalchild;
 		Ternario *highchild;
 	public:
 		Ternario ();
-		Ternario (char);
-		void insert(string);
-		int search(string);
+		void insert(string, int);
+		vector<int> search(string);
+		char getSplitChar();
 };
 
 #endif
