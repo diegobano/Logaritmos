@@ -1,4 +1,4 @@
-OBJS = pruebas.o hashing.o patricia.o
+OBJS = pruebas.o hashing.o patricia.o ternario.o
 HEADERS = hashing.hpp patricia.hpp ternario.hpp dictionary.hpp
 FILES = hashing.cpp pruebas.cpp patricia.cpp ternario.cpp
 CC = g++
@@ -22,7 +22,7 @@ pruebas.o: pruebas.cpp $(HEADERS)
 	$(CC) $(CFLAGS) pruebas.cpp
 
 clean:
-	\rm *.o test formateado*
+	\rm *.o test formateado* res.txt
 
 tar:
 	tar cfv tarea2.tar $(FILES) $(HEADERS)

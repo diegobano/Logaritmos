@@ -11,6 +11,7 @@ class Dictionary
 public:
 	virtual void insert(string, int) = 0;
 	virtual vector<int> search(string) = 0;
+	virtual string getName() = 0;
 };
 
 #endif

@@ -6,9 +6,11 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "dictionary.hpp"
+
 using namespace std;
 
-class Ptrie {
+class Ptrie : public Dictionary {
   bool isLeaf;
   string label;
   vector<int> values;
@@ -22,6 +24,7 @@ public:
   Ptrie();
   vector<int> search(string);
   void insert(string, int);
+  string getName() {return "patricia_";};
 };
 
 #endif

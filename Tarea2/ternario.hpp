@@ -7,11 +7,12 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include "dictionary.hpp"
 
 
 using namespace std;
 
-class Ternario {
+class Ternario : public Dictionary {
 	private:
 		char splitchar;
 		vector<int> values;
@@ -19,10 +20,11 @@ class Ternario {
 		Ternario *equalchild;
 		Ternario *highchild;
 	public:
-		Ternario ();
+		Ternario();
 		void insert(string, int);
 		vector<int> search(string);
 		char getSplitChar();
+		string getName() {return "ternario_";};
 };
 
 #endif

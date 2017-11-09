@@ -27,6 +27,7 @@ public:
 	int count(string);
 	int unique_count();
 	vector<string> unique_values();
+	string getName() {return "hashing_";};
 };
 
 #endif
