@@ -1,105 +1,118 @@
 // patricia.cpp
 #include "patricia.hpp"
 
-Ptrie::Ptrie(bool isLeaf, string label, vector<int> values,
-             vector<Ptrie *> children)
-    : isLeaf(isLeaf), label(label), values(values), children(children) {}
-Ptrie::Ptrie(string label, int value) : isLeaf(true), label(label) {
-  values.push_back(value);
-}
-Ptrie::Ptrie() : isLeaf(true) {}
+vector<string> words;
+unordered_map<string, vector<int>> positions;
 
-pair<pair<int, Ptrie *>, pair<string::iterator, string::iterator>>
-Ptrie::search_it(string::iterator it_key, string::iterator end) {
+Patricia::Patricia(bool isLeaf, string::iterator pointer, int length,
+                   vector<Patricia *> children)
+    : isLeaf(isLeaf), pointer(pointer), length(length), children(children) {}
+
+Patricia::Patricia(string key, int start, int value) : isLeaf(true) {
+  words.push_back(key);
+  pointer = words.back().begin() + start;
+  length = words.back().end() - pointer;
+  positions[key].push_back(value);
+}
+
+Patricia::Patricia(int size) : isLeaf(true) { words = vector<string>(size); }
+
+Patricia::Patricia() : Patricia(1024) {}
+
+int Patricia::compare(string::iterator it1, string::iterator it2, int length) {
+  for (; length > 0 && *it1++ == *it2++; length--)
+    ;
+  return length;
+}
+
+tuple<int, Patricia *, string::iterator>
+Patricia::search_it(string::iterator key) {
 
   // iterate over children
-  for (vector<Ptrie *>::iterator it = this->children.begin();
-       it != this->children.end(); ++it) {
+  for (Patricia *&child : this->children) {
 
     // compare label with key
-    pair<string::iterator, string::iterator> compare =
-        mismatch((*it)->label.begin(), (*it)->label.end(), it_key);
+    int cmp = compare(child->pointer, key, child->length);
 
     // if label is prefix of key
-    if (compare.first == (*it)->label.end()) {
+    if (!cmp) {
       // if key reach end
-      if (compare.second == end && (*it)->isLeaf)
-        return make_pair(make_pair(1, *it), make_pair(it_key, it_key));
+      if (!*(key + child->length))
+        return make_tuple(1, child, key);
       else
-        return (*it)->search_it(compare.second, end);
+        return child->search_it(key + child->length);
     }
-    // key ended on label
-    if (compare.first != (*it)->label.begin())
-      return make_pair(make_pair(2, *it), compare);
+    // if key ended on label
+    if (cmp != child->length)
+      return make_tuple(2, child, key);
   }
   // only stop on leaf at the beggining due to implementation
   if (this->isLeaf)
-    return make_pair(make_pair(3, this), make_pair(it_key, it_key));
+    return make_tuple(3, this, key);
   // stopped on node
   else
-    return make_pair(make_pair(4, this), make_pair(it_key, it_key));
+    return make_tuple(4, this, key);
 }
 
-vector<int> Ptrie::search(string key) {
-  key += "$";
-  pair<int, Ptrie *> sch_it = this->search_it(key.begin(), key.end()).first;
+vector<int> Patricia::search(string key) {
+  // key += "$";
+  int rc = get<0>(this->search_it(key.begin()));
   vector<int> res;
-  if (sch_it.first == 1)
-    res = sch_it.second->values;
+  if (rc == 1)
+    res = positions[key];
   return res;
 }
 
-void Ptrie::insert(string key, int value) {
-  key += "$";
-  pair<pair<int, Ptrie *>, pair<string::iterator, string::iterator>> sch =
-      this->search_it(key.begin(), key.end());
+void Patricia::insert(string key, int value) {
+  // key += "$";
+  int rc;
+  Patricia *node;
+  string::iterator key_pos;
+  tie(rc, node, key_pos) = this->search_it(key.begin());
 
   // key founded
-  if (sch.first.first == 1) {
-    sch.first.second->values.push_back(value);
+  if (rc == 1) {
+    positions[key].push_back(value);
   }
   // key ended on label
-  else if (sch.first.first == 2) {
-    Ptrie *node =
-        new Ptrie(sch.first.second->isLeaf,
-                  string(sch.second.first, sch.first.second->label.end()),
-                  sch.first.second->values, sch.first.second->children);
-
-    Ptrie *leaf = new Ptrie(string(sch.second.second, key.end()), value);
-
-    sch.first.second->isLeaf = false;
-    sch.first.second->label =
-        string(sch.first.second->label.begin(), sch.second.first);
-    sch.first.second->values.clear();
-    sch.first.second->children.clear();
-    if (node->label.compare(leaf->label) < 0) {
-      sch.first.second->children.push_back(node);
-      sch.first.second->children.push_back(leaf);
+  else if (rc == 2) {
+    int count = 0;
+    string::iterator pointer = node->pointer;
+    for (; *node->pointer == *key_pos; node->pointer++, key_pos++, count++)
+      ;
+    Patricia *new_node = new Patricia(node->isLeaf, node->pointer,
+                                      node->length - count, node->children);
+    Patricia *leaf = new Patricia(key, key_pos - key.begin(), value);
+    node->isLeaf = false;
+    node->pointer -= count;
+    node->length = count;
+    node->children.clear();
+    if (*new_node->pointer < *leaf->pointer) {
+      node->children.push_back(new_node);
+      node->children.push_back(leaf);
     } else {
-      sch.first.second->children.push_back(leaf);
-      sch.first.second->children.push_back(node);
+      node->children.push_back(leaf);
+      node->children.push_back(new_node);
     }
 
   }
   // stopped on leaf
-  else if (sch.first.first == 3) {
-    Ptrie *node = new Ptrie(key, value);
+  else if (rc == 3) {
+    Patricia *leaf = new Patricia(key, 0, value);
 
-    sch.first.second->isLeaf = false;
-    sch.first.second->children.push_back(node);
-
+    node->isLeaf = false;
+    node->children.push_back(leaf);
   }
   // stopped on node
-  else if (sch.first.first == 4) {
+  else if (rc == 4) {
     // iterate over children
-    for (vector<Ptrie *>::iterator it = sch.first.second->children.begin();
-         it != sch.first.second->children.end(); ++it) {
-      // if label > key
-      if (!lexicographical_compare(((*it)->label).begin(), ((*it)->label).end(),
-                                   sch.second.second, key.end())) {
-        Ptrie *ins = new Ptrie(string(sch.second.second, key.end()), value);
+
+    for (vector<Patricia *>::iterator child_it = node->children.begin();
+         child_it != node->children.end(); ++child_it) {
+      if (*(*child_it)->pointer > *key_pos) {
+        Patricia *leaf = new Patricia(key, key_pos - key.begin(), value);
         // insert new child before current iterator
-        sch.first.second->children.insert(it, ins);
+        node->children.insert(child_it, leaf);
         break;
       }
     }
@@ -108,20 +121,19 @@ void Ptrie::insert(string key, int value) {
 /*
 int main(int argc, char const *argv[]) {
 
-  Ptrie *test_root = new Ptrie();
+  Patricia *test_root = new Patricia(100);
 
-  test_root->insert("romane", 1);
-  test_root->insert("romanus", 2);
-  test_root->insert("romulus", 3);
-  test_root->insert("rubens", 4);
-  test_root->insert("ruber", 5);
-  test_root->insert("rubicon", 6);
-  test_root->insert("rubicundus", 7);
-  test_root->insert("ruber", 8);
-  test_root->insert("romanus", 9);
-  test_root->insert("rubicundus", 10);
-
-  cout << test_root->search("rubero").size() << endl;
+  test_root->insert("romane$", 1);
+  test_root->insert("romanus$", 2);
+  test_root->insert("romulus$", 3);
+  test_root->insert("rubens$", 4);
+  test_root->insert("ruber$", 5);
+  test_root->insert("rubicon$", 6);
+  test_root->insert("rubicundus$", 7);
+  test_root->insert("ruber$", 8);
+  test_root->insert("romanus$", 9);
+  test_root->insert("rubicundus$", 10);
+  cout << test_root->search("ruber$").size() << endl;
   return 0;
 }
 */

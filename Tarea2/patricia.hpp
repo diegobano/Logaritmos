@@ -1,27 +1,32 @@
 #ifndef _PATRICIA_INCLUDED_
 #define _PATRICIA_INCLUDED_
 
+
 #include <cstring>
 #include <iostream>
 #include <string>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 #include "dictionary.hpp"
 
 using namespace std;
 
-class Ptrie : public Dictionary {
+class Patricia : public Dictionary {
   bool isLeaf;
-  string label;
-  vector<int> values;
-  vector<Ptrie *> children;
-  pair<pair<int, Ptrie *>, pair<string::iterator, string::iterator>>
-      search_it(string::iterator, string::iterator);
+  string::iterator pointer;
+  int length;
+  vector<Patricia *> children;
+  tuple<int, Patricia *, string::iterator> search_it(string::iterator);
+  int compare(string::iterator, string::iterator, int);
 
 public:
-  Ptrie(bool, string, vector<int>, vector<Ptrie *>);
-  Ptrie(string, int);
-  Ptrie();
+  Patricia(bool, string::iterator, int, vector<Patricia *>);
+  Patricia(string, int, int);
+  Patricia(int);
+  Patricia();
   vector<int> search(string);
   void insert(string, int);
   string getName() {return "patricia_";};

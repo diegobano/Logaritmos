@@ -53,21 +53,20 @@ int main(int argc, char const *argv[])
 	ifstream text;
 	fstream formatted;
 	string word, fword;
-	int filesize = 0, unique_count, ejemplos = 13, next, pos;
+	int filesize = 0, unique_count, ejemplos = 13, pos;
 	uint i = 0;
-	double search_times[30][2];
 
 	chrono::high_resolution_clock::time_point begin, end;
     chrono::duration<double> elapsed;
     Hashing **h;
     Ternario **t;
-    Ptrie **p;
+    Patricia **p;
     vector<string> words, unique_words, r_words;
     vector<int> positions;
 
     h = new Hashing*[ejemplos];
     t = new Ternario*[ejemplos];
-    p = new Ptrie*[ejemplos];
+    p = new Patricia*[ejemplos];
 
     for (int k = 0; k < ejemplos; k++) {
     	//Formateo del archivo de entrada
@@ -126,7 +125,6 @@ int main(int argc, char const *argv[])
 		formatted.seekp(0, ios::beg);
 		h[k] = new Hashing(filesize);
 		t[k] = new Ternario();
-		p[k] = new Ptrie();
 
 		words.clear();
 		positions.clear();
@@ -166,6 +164,7 @@ int main(int argc, char const *argv[])
 		elapsed = end - begin;
 		cout << "Ternario: " << elapsed.count() * 1000 << " ms\n";
 		
+		p[k] = new Patricia(unique_count);
 		pos = 0;
 		begin = chrono::high_resolution_clock::now();
 		for (uint j = 0; j < words.size(); j++) {
