@@ -21,8 +21,8 @@ class Ternario : public Dictionary {
 		Ternario *highchild;
 	public:
 		Ternario();
-		void insert(string, int);
-		vector<int> search(string);
+		void insert(string, int, int);
+		vector<int> search(string, int);
 		char getSplitChar();
 		string getName() {return "ternario_";};
 };

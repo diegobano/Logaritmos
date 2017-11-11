@@ -17,7 +17,7 @@ Creates a Hashing table with the given size and seed values.
 Hashing::Hashing(int size, int seed) {
 	this->size = size;
 	keys = new string[size];
-	values = new vector<int>[size];
+	values = new vector<int>[2][size];
 	this->seed = seed;
 	for (int i = 0; i < this->size; i++) {
 		keys[i] = "";
@@ -32,7 +32,7 @@ Creates a Hashing table with default arbitrary seed and a given size.
 Hashing::Hashing(int size) {
 	this->size = size;
 	keys = new string[size];
-	values = new vector<int>[size];
+	values = new vector<int>[2][size];
 	this->seed = 131;
 	for (int i = 0; i < this->size; i++) {
 		keys[i] = "";
@@ -46,7 +46,7 @@ Creates a Hashing table with default arbitrary seed and size.
 Hashing::Hashing() {
 	size = 1000;
 	keys = new string[size];
-	values = new vector<int>[size];
+	values = new vector<int>[2][size];
 	seed = 131;
 	for (int i = 0; i < this->size; i++) {
 		keys[i] = "";
@@ -80,17 +80,17 @@ insert:
 	pos (int): Position of the string in the text it belongs to (0 if it doesn't belong to any text).
 Inserts the given string to the Hashing table using the Linear Probing strategy on collisioning hash values.
 */
-void Hashing::insert(string s, int pos) {
+void Hashing::insert(string s, int pos, int file) {
 	int index = this->hash(s);
 	int ini = index;
 
 	while (1) {
 		if (this->values[index].size() <= 0) {
 			this->keys[index] = s;
-			this->values[index].push_back(pos);
+			this->values[file][index].push_back(pos);
 			break;
 		} else if (this->keys[index] == s) {
-			this->values[index].push_back(pos);
+			this->values[file][index].push_back(pos);
 			break;
 		}else {
 			index = (index + 1) % this->size;
@@ -104,13 +104,13 @@ searh:
 	s (string): String value to look for in the table.
 Returns the positions vector for the given string (empty vector if the string is not in the table)
 */
-vector<int> Hashing::search(string s) {
+vector<int> Hashing::search(string s, int file) {
 	int index = this->hash(s);
 	int ini = index;
 	vector<int> res;
 	while (1) {
 		if (this->keys[index] == s) {
-			res =  this->values[index];
+			res =  this->values[file][index];
 			break;
 		} else if (this->keys[index] == "" || index == ini){
 			break;

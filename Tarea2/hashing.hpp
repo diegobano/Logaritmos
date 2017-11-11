@@ -15,15 +15,15 @@ class Hashing : public Dictionary
 private:
 	int seed, size;
 	string *keys;
-	vector<int> *values;
+	vector<int> **values;
 public:
 	Hashing(int, int);
 	Hashing(int);
 	Hashing();
 	~Hashing();
 	int hash(string);
-	void insert(string, int);
-	vector<int> search(string);
+	void insert(string, int, int);
+	vector<int> search(string, int);
 	int count(string);
 	int unique_count();
 	vector<string> unique_values();

@@ -27,8 +27,8 @@ public:
   Patricia(string, int, int);
   Patricia(int);
   Patricia();
-  vector<int> search(string);
-  void insert(string, int);
+  vector<int> search(string, int);
+  void insert(string, int, int);
   string getName() {return "patricia_";};
 };
 
