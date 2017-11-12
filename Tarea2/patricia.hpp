@@ -17,13 +17,21 @@ class Patricia : public Dictionary {
   int length;
   string *word;
   vector<Patricia *> children;
+  // words array
+  string *words;
+  int *i_words;
+  // positions
+  unordered_map<string, vector<vector<int>>> *positions;
+
   void expand_positions(string *, int);
   tuple<int, Patricia *, string::iterator> search_it(string::iterator);
   int compare(string::iterator, string::iterator, int);
 
 public:
-  Patricia(bool, string::iterator, int, string *, vector<Patricia *>);
-  Patricia(string, int, int, int);
+  Patricia(bool, string::iterator, int, string *, vector<Patricia *>, string *,
+           int *, unordered_map<string, vector<vector<int>>> *);
+  Patricia(string, int, int, int, string *, int *,
+           unordered_map<string, vector<vector<int>>> *);
   Patricia(int);
   Patricia();
   ~Patricia();
