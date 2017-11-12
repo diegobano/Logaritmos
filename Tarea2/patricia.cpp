@@ -38,7 +38,7 @@ Patricia::~Patricia() {
 }
 
 void Patricia::expand_positions(string *key, int text) {
-  for (; (*positions)[*key].size() < text + 1;
+  for (; int((*positions)[*key].size()) < text + 1;
        (*positions)[*key].push_back(vector<int>()))
     ;
 }
@@ -80,7 +80,7 @@ Patricia::search_it(string::iterator key) {
 vector<int> Patricia::search(string key, int text) {
   int rc = get<0>(this->search_it(key.begin()));
   vector<int> res;
-  if (rc == 1 && (*positions)[key].size() > text)
+  if (rc == 1 && int((*positions)[key].size()) > text)
     res = (*positions)[key][text];
   return res;
 }
