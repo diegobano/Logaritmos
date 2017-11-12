@@ -16,10 +16,10 @@ vector<int> Ternario::search(string word, int text){
 		}
 		else if (word[i] == p->splitchar) {
 			if (++i == n) {
-				if (text == 1) {
+				if (text == 0) {
 					res = p->text1;
 				}
-				else if (text == 2){
+				else if (text == 1){
 					res = p->text2;
 				}
 				break;
@@ -62,10 +62,10 @@ void Ternario::insert(string word, int index, int text){
 			p = p->highchild;
 		}
 	}
-	if (text == 1) {
+	if (text == 0) {
 		p->text1.push_back(index);
 	}
-	else if (text == 2) {
+	else if (text == 1) {
 		p->text2.push_back(index);
 	}
 }
