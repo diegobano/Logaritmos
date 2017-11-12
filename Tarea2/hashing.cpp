@@ -168,7 +168,7 @@ vector<string> Hashing::unique_values() {
 int Hashing::similarity() {
 	unsigned int sum = 0;
 	for (int i = 0; i < this->size; i++) {
-		sum += abs(this->values[0][i].size() - this->values[1][i].size());
+		sum += abs(((int)this->values[0][i].size()) - ((int)this->values[1][i].size()));
 	}
 	return sum;
 }

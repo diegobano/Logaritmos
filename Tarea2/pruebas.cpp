@@ -29,6 +29,7 @@ void similitud(Dictionary *d, vector<string> &words, vector<int> &positions, int
 	res = 1 - (((double) ss) / ((double) n));
 	end = chrono::high_resolution_clock::now();
 	elapsed = end - begin;
+	cout << "sum = " << ss << "; total = " << n << endl;
 	cout << d->getName() << "similarity_" << k << " = " << elapsed.count() << " : " << res << "\n";
 }
 
@@ -214,9 +215,9 @@ int main(int argc, char const *argv[])
 
 		if (k > 0) {
 			cout << "\nTiempos de recorrido:\n";
-			similitud(h[k-1], words, positions, unique_count, k);
-			similitud(t[k-1], words, positions, unique_count, k);
-			similitud(p[k-1], words, positions, unique_count, k);
+			similitud(h[k-1], words, positions, filesize, k);
+			similitud(t[k-1], words, positions, filesize, k);
+			similitud(p[k-1], words, positions, filesize, k);
 		}
 		cout << "Iteracion actual: " << k << endl;
 		formatted.seekp(0, ios::beg);
