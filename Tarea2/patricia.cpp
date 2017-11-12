@@ -73,7 +73,7 @@ vector<int> Patricia::search(string key, int text) {
   // key += "$";
   int rc = get<0>(this->search_it(key.begin()));
   vector<int> res;
-  if (rc == 1)
+  if (rc == 1 && positions[key].size() > text)
     res = positions[key][text];
   return res;
 }
