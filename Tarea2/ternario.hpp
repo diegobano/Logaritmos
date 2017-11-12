@@ -25,6 +25,7 @@ class Ternario : public Dictionary {
 		vector<int> search(string, int);
 		char getSplitChar();
 		string getName() {return "ternario_";};
+		int similarity();
 };
 
 #endif

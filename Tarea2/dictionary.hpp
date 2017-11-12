@@ -12,6 +12,7 @@ public:
 	virtual void insert(string, int, int) = 0;
 	virtual vector<int> search(string, int) = 0;
 	virtual string getName() = 0;
+	virtual int similarity() = 0;
 };
 
 #endif

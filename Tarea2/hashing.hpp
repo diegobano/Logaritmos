@@ -28,6 +28,7 @@ public:
 	int unique_count();
 	vector<string> unique_values();
 	string getName() {return "hashing_";};
+	int similarity();
 };
 
 #endif

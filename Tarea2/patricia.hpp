@@ -30,6 +30,7 @@ public:
   vector<int> search(string, int);
   void insert(string, int, int);
   string getName() {return "patricia_";};
+  int similarity();
 };
 
 #endif
