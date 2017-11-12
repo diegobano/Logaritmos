@@ -70,16 +70,14 @@ Patricia::search_it(string::iterator key) {
 }
 
 vector<int> Patricia::search(string key, int text) {
-  // key += "$";
   int rc = get<0>(this->search_it(key.begin()));
   vector<int> res;
-  if (rc == 1)
+  if (rc == 1 && positions[key].size() > text)
     res = positions[key][text];
   return res;
 }
 
 void Patricia::insert(string key, int value, int text) {
-  // key += "$";
   int rc;
   Patricia *node;
   string::iterator key_pos;
@@ -156,17 +154,17 @@ int main(int argc, char const *argv[]) {
 
   Patricia *test_root = new Patricia(100);
 
-  test_root->insert("romane$", 1, 0);
-  test_root->insert("romanus$", 2, 0);
-  test_root->insert("romulus$", 3, 0);
-  test_root->insert("rubens$", 4, 0);
-  test_root->insert("ruber$", 5, 0);
-  test_root->insert("rubicon$", 6, 0);
-  test_root->insert("rubicundus$", 7, 0);
-  test_root->insert("ruber$", 8, 1);
-  test_root->insert("romanus$", 9, 0);
-  test_root->insert("rubicundus$", 10, 0);
-  cout << "search: " << test_root->search("ruber$", 0).size() << endl;
+  test_root->insert("romane", 1, 0);
+  test_root->insert("romanus", 2, 0);
+  test_root->insert("romulus", 3, 0);
+  test_root->insert("rubens", 4, 0);
+  test_root->insert("ruber", 5, 0);
+  test_root->insert("rubicon", 6, 0);
+  test_root->insert("rubicundus", 7, 0);
+  test_root->insert("ruber", 8, 1);
+  test_root->insert("romanus", 9, 0);
+  test_root->insert("rubicundus", 10, 0);
+  cout << "search: " << test_root->search("ruber", 1).size() << endl;
   cout << "similarity: " << test_root->similarity() << endl;
   delete test_root;
   return 0;
