@@ -162,7 +162,7 @@ int Patricia::similarity() {
   }
   return res;
 }
-
+/*
 int main(int argc, char const *argv[]) {
 
   Patricia *test_root = new Patricia(100);
@@ -182,3 +182,4 @@ int main(int argc, char const *argv[]) {
   delete test_root;
   return 0;
 }
+*/
