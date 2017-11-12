@@ -15,7 +15,8 @@ using namespace std;
 class Ternario : public Dictionary {
 	private:
 		char splitchar;
-		vector<int> values;
+		vector<int> text1;
+		vector<int> text2;
 		Ternario *lowchild;
 		Ternario *equalchild;
 		Ternario *highchild;
@@ -26,6 +27,13 @@ class Ternario : public Dictionary {
 		char getSplitChar();
 		string getName() {return "ternario_";};
 		int similarity();
+		vector<int> getText1();
+		vector<int> getText2();
+		Ternario* getLowchild();
+		Ternario* getEqualchild();
+		Ternario* getHighchild();
+
+
 };
 
 #endif
