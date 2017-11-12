@@ -155,3 +155,14 @@ vector<string> Hashing::unique_values() {
 			words.push_back(this->keys[i]);
 	return words;
 }
+
+/*
+
+*/
+int Hashing::similarity() {
+	int sum = 0
+	for (int i = 0; i < this->size; i++) {
+		sum += abs(this->values[0][i].size() - this->values[1][i].size());
+	}
+	return sum;
+}
