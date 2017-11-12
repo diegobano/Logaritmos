@@ -9,13 +9,13 @@ LFLAGS = -std=c++11 -Wall $(DEBUG)
 test : $(OBJS)
 	$(CC) $(LFLAGS) $(OBJS) -o test
 
-hashing.o: hashing.cpp hashing.hpp
+hashing.o: hashing.cpp hashing.hpp dictionary.hpp
 	$(CC) $(CFLAGS) hashing.cpp
 
-patricia.o: patricia.cpp patricia.hpp
+patricia.o: patricia.cpp patricia.hpp dictionary.hpp
 	$(CC) $(CFLAGS) patricia.cpp
 
-ternario.o: ternario.cpp ternario.hpp
+ternario.o: ternario.cpp ternario.hpp dictionary.hpp
 	$(CC) $(CFLAGS) ternario.cpp
 
 pruebas.o: pruebas.cpp $(HEADERS)
