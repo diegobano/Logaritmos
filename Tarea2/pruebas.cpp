@@ -12,8 +12,22 @@
 #include "patricia.hpp"
 #include "ternario.hpp"
 
-void similitud(Dictionary *d) {
-	cout << d->search("hola").size() << endl;
+void similitud(Dictionary *d, vector<string> words, vector<int> positions, int n, int k) {
+	int ss;
+	double res;
+	chrono::high_resolution_clock::time_point begin, end;
+    chrono::duration<double> elapsed;
+
+	for (int i = 0; i < words.size(); i++) {
+		d.insert(words.at(i), positions.at(i), 1);
+	}
+
+	begin = chrono::high_resolution_clock::now();
+	ss = d.similarity();
+	res = 1 - ((double) ss) / ((double) n);
+	end = chrono::high_resolution_clock::now();
+	elapsed = end - begin;
+	cout << d.getName() << "similarity_" << k << " = " << elapsed.count() << "\n\n";
 }
 
 void doSearch(Dictionary *d, vector<string> words, int n, int k) {
@@ -53,7 +67,8 @@ int main(int argc, char const *argv[])
 	ifstream text;
 	fstream formatted;
 	string word, fword;
-	int filesize = 0, unique_count, ejemplos = 13, pos;
+	string *names
+	int filesize = 0, unique_count, ejemplos, pos;
 	uint i = 0;
 
 	chrono::high_resolution_clock::time_point begin, end;
@@ -64,13 +79,25 @@ int main(int argc, char const *argv[])
     vector<string> words, unique_words, r_words;
     vector<int> positions;
 
+    if (argc > 1) {
+    	ejemplos = argc - 1;
+    	names = new string[ejemplos];
+    	copy_n(argv+1, ejemplos, names);
+    } else {
+    	ejemplos = 13;
+    	names = new string[ejemplos];
+    	for (int k = 0; k < ejemplos; k++) {
+    		names[k] = "ejemplo"+to_string(k+1)+".txt";
+    	}
+    }
+
     h = new Hashing*[ejemplos];
     t = new Ternario*[ejemplos];
     p = new Patricia*[ejemplos];
 
     for (int k = 0; k < ejemplos; k++) {
     	//Formateo del archivo de entrada
-		text.open("ejemplo"+to_string(k+1)+".txt");
+		text.open(names[k]);
 		formatted.open("formateado"+to_string(k+1)+".txt", ios::in | ios::out | ios::trunc);
 		cout << "Formateando texto " << k << "\n";
 
@@ -142,7 +169,7 @@ int main(int argc, char const *argv[])
 		begin = chrono::high_resolution_clock::now();
 
 		for (uint j = 0; j < words.size(); j++) {
-			h[k]->insert(words.at(j), positions.at(j));
+			h[k]->insert(words.at(j), positions.at(j), 0);
 			pos += word.length() + 1;
 		}
 		end = chrono::high_resolution_clock::now();
@@ -157,7 +184,7 @@ int main(int argc, char const *argv[])
 		pos = 0;
 		begin = chrono::high_resolution_clock::now();
 		for (uint j = 0; j < words.size(); j++) {
-			t[k]->insert(words.at(j), positions.at(j));
+			t[k]->insert(words.at(j), positions.at(j), 0);
 			pos += word.length() + 1;
 		}
 		end = chrono::high_resolution_clock::now();
@@ -168,7 +195,7 @@ int main(int argc, char const *argv[])
 		pos = 0;
 		begin = chrono::high_resolution_clock::now();
 		for (uint j = 0; j < words.size(); j++) {
-			p[k]->insert(words.at(j), positions.at(j));
+			p[k]->insert(words.at(j), positions.at(j), 0);
 			pos += word.length() + 1;
 		}
 		end = chrono::high_resolution_clock::now();
@@ -179,15 +206,12 @@ int main(int argc, char const *argv[])
 		doSearch(t[k], words, unique_count, k);
 		doSearch(p[k], words, unique_count, k);
 
-		//r_words = generateRandom(words.length() / 10);
+		if (k > 0) {
+			similitud(h[k-1], words, positions, unique_count, k);
+			similitud(t[k-1], words, positions, unique_count, k);
+			similitud(p[k-1], words, positions, unique_count, k);
+		}
 
-		//doSearch(h[k], r_words, unique_count, k);
-		//doSearch(t[k], r_words, unique_count, k);
-		//doSearch(p[k], r_words, unique_count, k);
-
-		similitud(h[k]);
-		similitud(t[k]);
-		similitud(p[k]);
 		formatted.seekp(0, ios::beg);
 		formatted.close();
 		filesize = 0;
