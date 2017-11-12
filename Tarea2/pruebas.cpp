@@ -12,22 +12,24 @@
 #include "patricia.hpp"
 #include "ternario.hpp"
 
-void similitud(Dictionary *d, vector<string> words, vector<int> positions, int n, int k) {
+void similitud(Dictionary *d, vector<string> &words, vector<int> &positions, int n, int k) {
 	int ss;
 	double res;
 	chrono::high_resolution_clock::time_point begin, end;
     chrono::duration<double> elapsed;
 
 	for (int i = 0; i < words.size(); i++) {
-		d.insert(words.at(i), positions.at(i), 1);
+		d->insert(words.at(i), positions.at(i), 1);
+		//cout << "Insertando " << i << "/" << words.size() << endl;
 	}
+	//cout << "Calculando similitud\n";
 
 	begin = chrono::high_resolution_clock::now();
-	ss = d.similarity();
-	res = 1 - ((double) ss) / ((double) n);
+	ss = d->similarity();
+	res = 1 - (((double) ss) / ((double) n));
 	end = chrono::high_resolution_clock::now();
 	elapsed = end - begin;
-	cout << d.getName() << "similarity_" << k << " = " << elapsed.count() << "\n\n";
+	cout << d->getName() << "similarity_" << k << " = " << elapsed.count() << " : " << res << "\n";
 }
 
 void doSearch(Dictionary *d, vector<string> words, int n, int k) {
@@ -45,7 +47,7 @@ void doSearch(Dictionary *d, vector<string> words, int n, int k) {
 	for (int j = 0; j < n / 10; j++) {
 		next = rand() % n;
 		begin = chrono::high_resolution_clock::now();
-		d->search(words.at(next));
+		d->search(words.at(next), 0);
 		end = chrono::high_resolution_clock::now();
 		elapsed = end - begin;
 		search_times[words.at(next).length()][0] += elapsed.count() * 1000;
@@ -67,7 +69,7 @@ int main(int argc, char const *argv[])
 	ifstream text;
 	fstream formatted;
 	string word, fword;
-	string *names
+	string *names;
 	int filesize = 0, unique_count, ejemplos, pos;
 	uint i = 0;
 
@@ -80,10 +82,12 @@ int main(int argc, char const *argv[])
     vector<int> positions;
 
     if (argc > 1) {
+    	cout << "Utilizando textos entregados por consola\n\n";
     	ejemplos = argc - 1;
     	names = new string[ejemplos];
     	copy_n(argv+1, ejemplos, names);
     } else {
+    	cout << "Utilizando textos por defecto\n\n";
     	ejemplos = 13;
     	names = new string[ejemplos];
     	for (int k = 0; k < ejemplos; k++) {
@@ -94,7 +98,7 @@ int main(int argc, char const *argv[])
     h = new Hashing*[ejemplos];
     t = new Ternario*[ejemplos];
     p = new Patricia*[ejemplos];
-
+    cout << ejemplos << endl;
     for (int k = 0; k < ejemplos; k++) {
     	//Formateo del archivo de entrada
 		text.open(names[k]);
@@ -200,18 +204,21 @@ int main(int argc, char const *argv[])
 		}
 		end = chrono::high_resolution_clock::now();
 		elapsed = end - begin;
-		cout << "Patricia: " << elapsed.count() * 1000 << " ms\n";
+		cout << "Patricia: " << elapsed.count() * 1000 << " ms\n\n";
+
+		cout << "Tiempos de busqueda:\n";
 
 		doSearch(h[k], words, unique_count, k);
 		doSearch(t[k], words, unique_count, k);
 		doSearch(p[k], words, unique_count, k);
 
 		if (k > 0) {
+			cout << "\nTiempos de recorrido:\n";
 			similitud(h[k-1], words, positions, unique_count, k);
 			similitud(t[k-1], words, positions, unique_count, k);
 			similitud(p[k-1], words, positions, unique_count, k);
 		}
-
+		cout << "Iteracion actual: " << k << endl;
 		formatted.seekp(0, ios::beg);
 		formatted.close();
 		filesize = 0;

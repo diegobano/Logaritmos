@@ -17,7 +17,9 @@ Creates a Hashing table with the given size and seed values.
 Hashing::Hashing(int size, int seed) {
 	this->size = size;
 	keys = new string[size];
-	values = new vector<int>[2][size];
+	values = new vector<int>*[2];
+	values[0] = new vector<int>[size];
+	values[1] = new vector<int>[size];
 	this->seed = seed;
 	for (int i = 0; i < this->size; i++) {
 		keys[i] = "";
@@ -32,7 +34,9 @@ Creates a Hashing table with default arbitrary seed and a given size.
 Hashing::Hashing(int size) {
 	this->size = size;
 	keys = new string[size];
-	values = new vector<int>[2][size];
+	values = new vector<int>*[2];
+	values[0] = new vector<int>[size];
+	values[1] = new vector<int>[size];
 	this->seed = 131;
 	for (int i = 0; i < this->size; i++) {
 		keys[i] = "";
@@ -46,7 +50,9 @@ Creates a Hashing table with default arbitrary seed and size.
 Hashing::Hashing() {
 	size = 1000;
 	keys = new string[size];
-	values = new vector<int>[2][size];
+	values = new vector<int>*[2];
+	values[0] = new vector<int>[size];
+	values[1] = new vector<int>[size];
 	seed = 131;
 	for (int i = 0; i < this->size; i++) {
 		keys[i] = "";
@@ -85,7 +91,7 @@ void Hashing::insert(string s, int pos, int file) {
 	int ini = index;
 
 	while (1) {
-		if (this->values[index].size() <= 0) {
+		if (this->values[file][index].size() <= 0) {
 			this->keys[index] = s;
 			this->values[file][index].push_back(pos);
 			break;
@@ -127,7 +133,7 @@ count:
 Returns the amount of ocurrences of the string in the text.
 */
 int Hashing::count(string s) {
-	vector<int> res = this->search(s);
+	vector<int> res = this->search(s, 0);
 	return res.size();
 }
 
@@ -138,7 +144,7 @@ Returns the number of different words inserted into the object.
 int Hashing::unique_count() {
 	int cnt = 0;
 	for (int i = 0; i < this->size; i++) {
-		if (this->values[i].size() > 0)
+		if (this->values[0][i].size() > 0)
 			cnt++;
 	}
 	return cnt;
@@ -151,7 +157,7 @@ Returns a vector containing all the unique values stored in its table.
 vector<string> Hashing::unique_values() {
 	vector<string> words;
 	for (int i = 0; i < this->size; i++)
-		if (this->values[i].size() > 0)
+		if (this->values[0][i].size() > 0)
 			words.push_back(this->keys[i]);
 	return words;
 }
@@ -160,7 +166,7 @@ vector<string> Hashing::unique_values() {
 
 */
 int Hashing::similarity() {
-	int sum = 0
+	unsigned int sum = 0;
 	for (int i = 0; i < this->size; i++) {
 		sum += abs(this->values[0][i].size() - this->values[1][i].size());
 	}
