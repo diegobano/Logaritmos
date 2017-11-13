@@ -1,45 +1,37 @@
 // patricia.cpp
 #include "patricia.hpp"
 
-Patricia::Patricia(bool isLeaf, string::iterator pointer, int length,
-                   string *word, vector<Patricia *> children, string *words,
-                   int *i_words,
-                   unordered_map<string, vector<vector<int>>> *positions)
-    : isLeaf(isLeaf), pointer(pointer), length(length), word(word),
-      children(children), words(words), i_words(i_words), positions(positions) {
-}
+string *words;
+int i_words;
+unordered_map<string, vector<vector<int>>> positions;
 
-Patricia::Patricia(string key, int start, int value, int text, string *words,
-                   int *i_words,
-                   unordered_map<string, vector<vector<int>>> *positions)
-    : isLeaf(true), words(words), i_words(i_words), positions(positions) {
-  words[*i_words] = key;
-  pointer = words[*i_words].begin() + start;
-  length = words[*i_words].end() - pointer;
-  word = &words[*i_words];
-  (*i_words)++;
+Patricia::Patricia(bool isLeaf, string::iterator pointer, int length,
+                   string *word, vector<Patricia *> children)
+    : isLeaf(isLeaf), pointer(pointer), length(length), word(word),
+      children(children) {}
+
+Patricia::Patricia(string key, int start, int value, int text) : isLeaf(true) {
+  words[i_words] = key;
+  pointer = words[i_words].begin() + start;
+  length = words[i_words].end() - pointer;
+  word = &words[i_words];
+  i_words++;
   expand_positions(&key, text);
-  (*positions)[key][text].push_back(value);
+  positions[key][text].push_back(value);
 }
 
 Patricia::Patricia(int size) : isLeaf(true) {
   words = new string[size];
-  i_words = new int;
-  *i_words = 0;
-  positions = new unordered_map<string, vector<vector<int>>>;
+  i_words = 0;
 }
 
 Patricia::Patricia() : Patricia(1024) {}
 
-Patricia::~Patricia() {
-  delete[] words;
-  delete i_words;
-  delete positions;
-}
+Patricia::~Patricia() { delete[] words; }
 
 void Patricia::expand_positions(string *key, int text) {
-  for (; int((*positions)[*key].size()) < text + 1;
-       (*positions)[*key].push_back(vector<int>()))
+  for (; positions[*key].size() < text + 1;
+       positions[*key].push_back(vector<int>()))
     ;
 }
 
@@ -80,8 +72,8 @@ Patricia::search_it(string::iterator key) {
 vector<int> Patricia::search(string key, int text) {
   int rc = get<0>(this->search_it(key.begin()));
   vector<int> res;
-  if (rc == 1 && int((*positions)[key].size()) > text)
-    res = (*positions)[key][text];
+  if (rc == 1 && positions[key].size() > text)
+    res = positions[key][text];
   return res;
 }
 
@@ -94,18 +86,17 @@ void Patricia::insert(string key, int value, int text) {
   // key founded
   if (rc == 1) {
     expand_positions(&key, text);
-    (*positions)[key][text].push_back(value);
+    positions[key][text].push_back(value);
   }
   // key ended on label
   else if (rc == 2) {
     int count = 0;
     for (; *node->pointer == *key_pos; node->pointer++, key_pos++, count++)
       ;
-    Patricia *new_node = new Patricia(
-        node->isLeaf, node->pointer, node->length - count, node->word,
-        node->children, node->words, node->i_words, node->positions);
-    Patricia *leaf = new Patricia(key, key_pos - key.begin(), value, text,
-                                  node->words, node->i_words, node->positions);
+    Patricia *new_node =
+        new Patricia(node->isLeaf, node->pointer, node->length - count,
+                     node->word, node->children);
+    Patricia *leaf = new Patricia(key, key_pos - key.begin(), value, text);
     node->isLeaf = false;
     node->pointer -= count;
     node->length = count;
@@ -121,8 +112,7 @@ void Patricia::insert(string key, int value, int text) {
   }
   // stopped on leaf
   else if (rc == 3) {
-    Patricia *leaf = new Patricia(key, 0, value, text, node->words,
-                                  node->i_words, node->positions);
+    Patricia *leaf = new Patricia(key, 0, value, text);
 
     node->isLeaf = false;
     node->children.push_back(leaf);
@@ -130,12 +120,11 @@ void Patricia::insert(string key, int value, int text) {
   // stopped on node
   else if (rc == 4) {
     // iterate over children
+
     for (vector<Patricia *>::iterator child_it = node->children.begin();
          child_it != node->children.end(); ++child_it) {
       if (*(*child_it)->pointer > *key_pos) {
-        Patricia *leaf =
-            new Patricia(key, key_pos - key.begin(), value, text, node->words,
-                         node->i_words, node->positions);
+        Patricia *leaf = new Patricia(key, key_pos - key.begin(), value, text);
         // insert new child before current iterator
         node->children.insert(child_it, leaf);
         break;
@@ -151,11 +140,9 @@ int Patricia::similarity() {
   // iterate over children
   for (Patricia *&child : this->children) {
     if (child->isLeaf) {
-      int texts = (*positions)[*child->word].size();
-      int word_t1 =
-          text_1 < texts ? (*positions)[*child->word][text_1].size() : 0;
-      int word_t2 =
-          text_2 < texts ? (*positions)[*child->word][text_2].size() : 0;
+      int texts = positions[*child->word].size();
+      int word_t1 = text_1 < texts ? positions[*child->word][text_1].size() : 0;
+      int word_t2 = text_2 < texts ? positions[*child->word][text_2].size() : 0;
       res += abs(word_t1 - word_t2);
     } else
       res += child->similarity();
