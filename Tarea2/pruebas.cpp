@@ -29,8 +29,7 @@ void similitud(Dictionary *d, vector<string> &words, vector<int> &positions, int
 	res = 1 - (((double) ss) / ((double) n));
 	end = chrono::high_resolution_clock::now();
 	elapsed = end - begin;
-	cout << "sum = " << ss << "; total = " << n << endl;
-	cout << d->getName() << "similarity_" << k << " = " << elapsed.count() << " : " << res << "\n";
+	cout << d->getName() << "similarity_" << k << " = " << elapsed.count() << "\n";
 }
 
 void doSearch(Dictionary *d, vector<string> words, int n, int k) {
