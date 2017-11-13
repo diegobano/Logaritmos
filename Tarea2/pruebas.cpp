@@ -71,7 +71,7 @@ int main(int argc, char const *argv[])
 	fstream formatted;
 	string word, fword;
 	string *names;
-	int filesize = 0, unique_count, ejemplos, pos;
+	int filesize = 0, prev, unique_count, ejemplos, pos;
 	uint i = 0;
 
 	chrono::high_resolution_clock::time_point begin, end;
@@ -215,13 +215,14 @@ int main(int argc, char const *argv[])
 
 		if (k > 0) {
 			cout << "\nTiempos de recorrido:\n";
-			similitud(h[k-1], words, positions, filesize, k);
-			similitud(t[k-1], words, positions, filesize, k);
-			similitud(p[k-1], words, positions, filesize, k);
+			similitud(h[k-1], words, positions, filesize + prev, k);
+			similitud(t[k-1], words, positions, filesize + prev, k);
+			similitud(p[k-1], words, positions, filesize + prev, k);
 		}
 		cout << "Iteracion actual: " << k << endl;
 		formatted.seekp(0, ios::beg);
 		formatted.close();
+		prev = filesize;
 		filesize = 0;
 	}
 

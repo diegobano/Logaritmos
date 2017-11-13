@@ -13,17 +13,16 @@ using namespace std;
 
 class Patricia : public Dictionary {
   bool isLeaf;
-  string::iterator pointer;
-  int length;
-  string *word;
+  string label;
   vector<Patricia *> children;
-  void expand_positions(string *, int);
+  vector<vector<int>> positions;
+  void expand_positions(string, int);
   tuple<int, Patricia *, string::iterator> search_it(string::iterator);
   int compare(string::iterator, string::iterator, int);
 
 public:
-  Patricia(bool, string::iterator, int, string *, vector<Patricia *>);
-  Patricia(string, int, int, int);
+  Patricia(bool, string, vector<Patricia *>, vector<vector<int>>);
+  Patricia(string, string, int, int);
   Patricia(int);
   Patricia();
   ~Patricia();
